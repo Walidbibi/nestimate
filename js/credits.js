@@ -218,7 +218,7 @@ function _renderLignes() {
         <input type="text" value="${escHtml(l.name || '')}" placeholder="${placeholder}"
           oninput="updateLigneField('${l.id}','name',this.value)" style="min-height:38px;">
       </div>
-      <div class="comp-fields" style="grid-template-columns:repeat(4,1fr);">
+      <div class="comp-fields ligne-fields">
         <div class="field">
           <label style="font-size:.82rem;">Montant (&#8364;)</label>
           <input type="number" value="${l.amount || ''}" min="0" step="1000" inputmode="decimal" placeholder="180 000"
@@ -240,6 +240,7 @@ function _renderLignes() {
             onchange="updateLigneField('${l.id}','startDate',this.value)">
         </div>
       </div>
+
       <div class="paliers-wrap">
         <div class="paliers-header">
           <span class="paliers-label">Paliers de mensualit&#233;s${(l.paliers||[]).length === 0 ? ' <span class="paliers-hint">(calcul auto)</span>' : ''}</span>

@@ -921,6 +921,8 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 }
 .credit-loyer-row span:first-child { font-weight: 600; color: var(--success); }
 /* Paliers de mensualités */
+.ligne-fields { grid-template-columns: repeat(2, 1fr) !important; }
+
 .paliers-wrap { border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 10px; }
 .paliers-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .paliers-label { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
