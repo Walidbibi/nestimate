@@ -32,39 +32,64 @@ function _migrateLegacyCredit(c) {
 
 // ── Calcul d'une ligne ─────────────────────────────────────────
 
+function _kFromDate(startDate, globalK) {
+  if (!startDate) return globalK;
+  const start = new Date(startDate);
+  const now   = new Date();
+  let k = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  if (now.getDate() < start.getDate()) k -= 1;
+  return Math.max(0, k);
+}
+
 function _computeLigne(ligne, globalK) {
   const P = parseFloat(ligne.amount) || 0;
   const r = (parseFloat(ligne.rate) || 0) / 100 / 12;
-  const n = parseInt(ligne.duration) || 0;
+  const k = _kFromDate(ligne.startDate, globalK);
 
-  // Si la ligne a sa propre date de départ, on calcule k depuis elle
-  let k = globalK;
-  if (ligne.startDate) {
-    const start = new Date(ligne.startDate);
-    const now   = new Date();
-    // Nombre de mois écoulés depuis le 1er prélèvement
-    k = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-    // Si le jour du prélèvement n'est pas encore passé ce mois-ci, on ne le compte pas
-    if (now.getDate() < start.getDate()) k -= 1;
-    k = Math.max(0, k);
+  const paliers = (ligne.paliers || []).filter(p => parseInt(p.duration) > 0);
+
+  // ── Avec paliers : simulation mois par mois ──────────────────
+  if (paliers.length > 0) {
+    const n  = paliers.reduce((s, p) => s + (parseInt(p.duration) || 0), 0);
+    const lk = Math.min(k, n);
+    let bal = P, paid = 0, done = 0, currentLm = 0;
+
+    for (const palier of paliers) {
+      const np = parseInt(palier.duration) || 0;
+      const mp = parseFloat(palier.mensualite) || 0;
+      currentLm = mp;
+      const months = Math.min(lk - done, np);
+      if (months > 0) {
+        bal = r > 0
+          ? Math.max(bal * Math.pow(1+r, months) - mp * (Math.pow(1+r, months) - 1) / r, 0)
+          : Math.max(bal - mp * months, 0);
+        paid += mp * months;
+        done += months;
+      }
+      if (done >= lk) break;
+    }
+
+    const totalPayments  = paliers.reduce((s, p) => s + (parseInt(p.duration)||0) * (parseFloat(p.mensualite)||0), 0);
+    const paidCapital    = P - bal;
+    const paidInterest   = Math.max(paid - paidCapital, 0);
+
+    return { lm: currentLm, crd: bal, paidCapital, paidInterest, paidTotal: paid,
+             totalCostLigne: Math.max(totalPayments - P, 0), active: lk < n, n, lk };
   }
+
+  // ── Sans paliers : calcul standard ──────────────────────────
+  const n  = parseInt(ligne.duration) || 0;
   const lk = Math.min(k, n);
-
-  const lm = r > 0
-    ? P * r / (1 - Math.pow(1 + r, -n))
-    : (n > 0 ? P / n : 0);
-
-  let crd = r > 0
+  const lm = r > 0 ? P * r / (1 - Math.pow(1+r, -n)) : (n > 0 ? P / n : 0);
+  let crd  = r > 0
     ? P * Math.pow(1+r, lk) - lm * (Math.pow(1+r, lk) - 1) / r
     : Math.max(P - lm * lk, 0);
   crd = Math.max(crd, 0);
-
   const paidCapital  = P - crd;
   const paidInterest = Math.max(lk * lm - paidCapital, 0);
-  const totalCostLigne = Math.max(n * lm - P, 0); // intérêts totaux ligne
-  const active = lk < n; // la ligne est encore en cours
 
-  return { lm, crd, paidCapital, paidInterest, paidTotal: lk * lm, totalCostLigne, active, n, lk };
+  return { lm, crd, paidCapital, paidInterest, paidTotal: lk * lm,
+           totalCostLigne: Math.max(n * lm - P, 0), active: lk < n, n, lk };
 }
 
 // ── Calcul consolidé d'un crédit ──────────────────────────────
@@ -145,6 +170,28 @@ function updateLigneField(id, field, value) {
   if (l) l[field] = value;
 }
 
+function addPalier(ligneId) {
+  const l = _creditLignes.find(l => l.id === ligneId);
+  if (!l) return;
+  if (!l.paliers) l.paliers = [];
+  l.paliers.push({ id: _newLigneId(), duration: '', mensualite: '' });
+  _renderLignes();
+}
+
+function removePalier(ligneId, palierId) {
+  const l = _creditLignes.find(l => l.id === ligneId);
+  if (!l || !l.paliers) return;
+  l.paliers = l.paliers.filter(p => p.id !== palierId);
+  _renderLignes();
+}
+
+function updatePalierField(ligneId, palierId, field, value) {
+  const l = _creditLignes.find(l => l.id === ligneId);
+  if (!l || !l.paliers) return;
+  const p = l.paliers.find(p => p.id === palierId);
+  if (p) p[field] = value;
+}
+
 function _renderLignes() {
   const container = G('cfLignes');
   if (!container) return;
@@ -193,6 +240,29 @@ function _renderLignes() {
             onchange="updateLigneField('${l.id}','startDate',this.value)">
         </div>
       </div>
+      <div class="paliers-wrap">
+        <div class="paliers-header">
+          <span class="paliers-label">Paliers de mensualit&#233;s${(l.paliers||[]).length === 0 ? ' <span class="paliers-hint">(calcul auto)</span>' : ''}</span>
+          <button class="btn-palier" onclick="addPalier('${l.id}')">+ Palier</button>
+        </div>
+        ${(l.paliers && l.paliers.length > 0)
+          ? l.paliers.map((p, pi) => `
+            <div class="palier-row">
+              <span class="palier-num">Palier ${pi + 1}</span>
+              <div class="field" style="flex:1;gap:3px;">
+                <label style="font-size:.72rem;">Dur&#233;e (mois)</label>
+                <input type="number" value="${p.duration || ''}" min="1" step="1" placeholder="120" style="min-height:36px;"
+                  oninput="updatePalierField('${l.id}','${p.id}','duration',this.value)">
+              </div>
+              <div class="field" style="flex:1;gap:3px;">
+                <label style="font-size:.72rem;">Mensualit&#233; (&#8364;)</label>
+                <input type="number" value="${p.mensualite || ''}" min="0" step="10" placeholder="800" style="min-height:36px;"
+                  oninput="updatePalierField('${l.id}','${p.id}','mensualite',this.value)">
+              </div>
+              <button class="comp-remove-btn" onclick="removePalier('${l.id}','${p.id}')" style="margin-bottom:2px;">&#10005;</button>
+            </div>`).join('')
+          : `<div class="paliers-empty">Mensualit&#233; calcul&#233;e depuis montant + taux + dur&#233;e.</div>`}
+      </div>
     </div>`;
   }).join('');
 
@@ -215,8 +285,8 @@ function openCreditForm(id) {
   G('cfError').textContent       = '';
 
   _creditLignes = c?.lignes?.length
-    ? c.lignes.map(l => ({ ...l }))
-    : [{ id: _newLigneId(), name: '', amount: '', rate: '', duration: '' }];
+    ? c.lignes.map(l => ({ ...l, paliers: (l.paliers || []).map(p => ({...p})) }))
+    : [{ id: _newLigneId(), name: '', amount: '', rate: '', duration: '', paliers: [] }];
 
   updateCreditFormSubtype();
   _renderLignes();
@@ -260,11 +330,15 @@ function saveCreditForm() {
     insuranceMonthly: parseFloat(G('cfInsurance').value) || 0,
     loyerPercu:       parseFloat(G('cfLoyer').value)     || 0,
     lignes: _creditLignes.map((l, i) => ({
-      id:       l.id,
-      name:     l.name || ('Ligne ' + (i + 1)),
-      amount:   parseFloat(l.amount)   || 0,
-      rate:     parseFloat(l.rate)     || 0,
-      duration: parseInt(l.duration)   || 0,
+      id:        l.id,
+      name:      l.name || ('Ligne ' + (i + 1)),
+      amount:    parseFloat(l.amount)   || 0,
+      rate:      parseFloat(l.rate)     || 0,
+      duration:  parseInt(l.duration)   || 0,
+      startDate: l.startDate            || null,
+      paliers:   (l.paliers || [])
+        .map(p => ({ id: p.id, duration: parseInt(p.duration)||0, mensualite: parseFloat(p.mensualite)||0 }))
+        .filter(p => p.duration > 0 && p.mensualite > 0),
     })),
   };
 

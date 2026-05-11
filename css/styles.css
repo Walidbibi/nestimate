@@ -920,6 +920,21 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   font-size: .82rem;
 }
 .credit-loyer-row span:first-child { font-weight: 600; color: var(--success); }
+/* Paliers de mensualités */
+.paliers-wrap { border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 10px; }
+.paliers-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.paliers-label { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.paliers-hint { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.paliers-empty { font-size: .78rem; color: var(--muted); font-style: italic; }
+.btn-palier {
+  font: inherit; font-size: .75rem; font-weight: 700; padding: 3px 10px;
+  border-radius: 999px; border: 1.5px solid var(--primary);
+  background: var(--primary-soft); color: var(--primary); cursor: pointer;
+}
+.btn-palier:hover { background: var(--primary); color: #fff; }
+.palier-row { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 8px; }
+.palier-num { font-size: .72rem; font-weight: 700; color: var(--primary); width: 52px; flex-shrink: 0; padding-bottom: 10px; }
+
 .clr-name { font-weight: 700; color: var(--text); flex: 1; min-width: 80px; }
 .clr-info { color: var(--muted); }
 .clr-crd  { color: var(--primary); font-weight: 600; margin-left: auto; }
