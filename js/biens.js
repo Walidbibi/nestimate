@@ -231,7 +231,7 @@ function renderBienList() {
               <div class="cm-value cm-warn">${euro(m.totalCost)}</div>
             </div>
           </div>
-          ${b.currentValue ? (() => {
+          ${b.currentValue && credit ? (() => {
             const rows = computeProjectionTable(b, credit);
             if (!rows) return '';
             const today = rows[0];
