@@ -32,11 +32,19 @@ function _migrateLegacyCredit(c) {
 
 // ── Calcul d'une ligne ─────────────────────────────────────────
 
-function _computeLigne(ligne, k) {
-  const P = parseFloat(ligne.amount)   || 0;
+function _computeLigne(ligne, globalK) {
+  const P = parseFloat(ligne.amount) || 0;
   const r = (parseFloat(ligne.rate) || 0) / 100 / 12;
-  const n = parseInt(ligne.duration)   || 0;
-  const lk = Math.min(k, n); // cette ligne peut être terminée
+  const n = parseInt(ligne.duration) || 0;
+
+  // Si la ligne a sa propre date de départ, on calcule k depuis elle
+  let k = globalK;
+  if (ligne.startDate) {
+    const [sy, sm] = ligne.startDate.split('-').map(Number);
+    const now = new Date();
+    k = Math.max(0, (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm));
+  }
+  const lk = Math.min(k, n);
 
   const lm = r > 0
     ? P * r / (1 - Math.pow(1 + r, -n))
@@ -159,7 +167,7 @@ function _renderLignes() {
         <input type="text" value="${escHtml(l.name || '')}" placeholder="${placeholder}"
           oninput="updateLigneField('${l.id}','name',this.value)" style="min-height:38px;">
       </div>
-      <div class="comp-fields">
+      <div class="comp-fields" style="grid-template-columns:repeat(4,1fr);">
         <div class="field">
           <label style="font-size:.82rem;">Montant (&#8364;)</label>
           <input type="number" value="${l.amount || ''}" min="0" step="1000" inputmode="decimal" placeholder="180 000"
@@ -174,6 +182,11 @@ function _renderLignes() {
           <label style="font-size:.82rem;">Dur&#233;e (mois)</label>
           <input type="number" value="${l.duration || ''}" min="1" step="1" inputmode="decimal" placeholder="240"
             oninput="updateLigneField('${l.id}','duration',this.value)">
+        </div>
+        <div class="field">
+          <label style="font-size:.82rem;">1er paiement</label>
+          <input type="month" value="${l.startDate || ''}"
+            onchange="updateLigneField('${l.id}','startDate',this.value)">
         </div>
       </div>
     </div>`;
