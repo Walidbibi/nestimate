@@ -19,6 +19,7 @@ const PFIELDS = [
   'currentCredits', 'alimonyPaid', 'rentPaid', 'otherExpenses', 'nbAdults', 'nbChildren',
   'apport', 'rate', 'insuranceRate', 'insuranceRate2', 'quotite1', 'quotite2', 'duration', 'debtRatio',
   'notaryRate', 'guaranteeRate', 'bankFees', 'brokerPct',
+  'invTarget',
   'propPrice', 'agencyFees', 'works',
   'holdYears', 'appRate', 'rentRef', 'rentInfl', 'ownerCosts', 'savRate', 'sellAgRate', 'rvbPrice',
   'compPrice0', 'compWorks0', 'compDur0', 'compName0',
@@ -33,6 +34,7 @@ const DEFAULT_VALUES = {
   apport: 0, rate: 0, insuranceRate: 0, insuranceRate2: 0,
   quotite1: 0, quotite2: 0, duration: 20, debtRatio: 35,
   notaryRate: 0, guaranteeRate: 0, bankFees: 0,
+  invTarget: 0,
   propPrice: 0, agencyFees: 0, works: 0,
   holdYears: 10, appRate: 0, rentRef: 0, rentInfl: 0,
   ownerCosts: 0, savRate: 0, sellAgRate: 0, rvbPrice: 0

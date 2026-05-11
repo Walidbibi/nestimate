@@ -1,4 +1,4 @@
-const CACHE = 'nestimate-v3';
+const CACHE = 'nestimate-v4';
 const ASSETS = [
   './index.html',
   './css/styles.css',
@@ -27,7 +27,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   // Réseau en priorité pour les polices externes et les fichiers JS/HTML
-  if (e.request.url.includes('fontshare.com') || e.request.url.match(/\.(js|html)(\?|$)/)) {
+  if (e.request.url.includes('fontshare.com') || e.request.url.match(/\.(js|html)(\?|$)/) || e.request.url.endsWith('/')) {
     e.respondWith(
       fetch(e.request).then(r => {
         const copy = r.clone();

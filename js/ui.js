@@ -1,55 +1,127 @@
-// ── Navigation ────────────────────────────────────────────
+// ── Navigation ────────────────────────────────────────────────
 
-const PAGE_PHASE = [0, 0, 0, 0, 1, 1, 1]; // index de phase pour chaque page (0-6)
-const PAGE_SUB = [
-  'Revenus — étape 1/4', 'Charges — étape 2/4', 'Financement — étape 3/4', 'Budget max — étape 4/4',
-  'Tester un bien', 'Comparer des biens', 'Bilan complet'
-];
+function _hideAll() {
+  ['page-home','page-profiles','page-montages','page-mensualite','modeBudget','modeRvb'].forEach(id => {
+    const el = G(id); if (el) el.classList.remove('active');
+  });
+}
 
 function goTo(step) {
-  if (step === 4) setTimeout(initSimApport, 50);
-  if (step === 5) setTimeout(initComparison, 50);
-
-  if (step > currentPage) {
+  if (step === 'home') {
+    _hideAll(); G('page-home').classList.add('active');
+    currentPage = -1; currentMode = 'budget';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    refreshHome(); return;
+  }
+  if (step === 'profiles') {
+    _hideAll(); G('page-profiles').classList.add('active');
+    currentPage = -1; currentMode = 'budget';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    renderProfileList(); return;
+  }
+  if (step === 'montages') {
+    _hideAll(); G('page-montages').classList.add('active');
+    currentPage = -1; currentMode = 'budget';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    renderMontageList(); return;
+  }
+  if (step === 'mensualite') {
+    _hideAll(); G('page-mensualite').classList.add('active');
+    currentPage = -1; currentMode = 'budget';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    refreshInverse();
+    return;
+  }
+  if (step === 'rvb') {
+    _hideAll(); G('modeRvb').classList.add('active');
+    currentMode = 'rvb'; currentPage = -1;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    refreshRvb(); return;
+  }
+  // Validation avant tout changement visuel
+  if (step > currentPage && currentPage >= 0) {
     const v = validatePage(currentPage);
     if (!v.ok) return;
   }
+  if (step === 4) setTimeout(initSimApport, 50);
+  if (step === 5) setTimeout(initComparison, 50);
   clearFieldErrors();
-
-  currentPage = step;
+  _hideAll();
+  currentMode = 'budget'; currentPage = step;
+  G('modeBudget').classList.add('active');
   document.querySelectorAll('#modeBudget .page').forEach((p, i) => p.classList.toggle('active', i === step));
-
-  const ph = PAGE_PHASE[step] || 0;
-  [0, 1].forEach(i => {
-    const btn = G('ph' + i);
-    if (!btn) return;
-    btn.classList.remove('active', 'done');
-    if (i === ph) btn.classList.add('active');
-    else if (i < ph) btn.classList.add('done');
-  });
-
-  const sub0 = G('ph0sub');
-  const sub1 = G('ph1sub');
-  if (sub0) sub0.textContent = ph === 0 ? PAGE_SUB[step] : 'Revenus, charges, financement';
-  if (sub1) sub1.textContent = ph === 1 ? PAGE_SUB[step] : 'Tester un bien & bilan';
-
-  [0, 1, 2, 3].forEach(i => {
-    const dot = G('pd' + i);
-    if (!dot) return;
-    dot.className = 'ph-dot' + (i === step ? ' active' : i < step ? ' done' : '');
-  });
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
   refresh();
 }
 
 function setMode(mode) {
-  currentMode = mode;
-  G('modeBudget').classList.toggle('active', mode === 'budget');
-  G('modeRvb').classList.toggle('active', mode === 'rvb');
-  G('tabBudget').classList.toggle('active', mode === 'budget');
-  G('tabRvb').classList.toggle('active', mode === 'rvb');
-  if (mode === 'rvb') refreshRvb();
+  if (mode === 'rvb') goTo('rvb');
+  else goTo('home');
+}
+
+// ── Page d'accueil ────────────────────────────────────────────
+
+function refreshHome() {
+  const b = calcBudget();
+  const profileOk = b.inc > 0;
+  const locked = '⚠ Complétez votre profil financier';
+
+  const el0 = G('hcMeta0');
+  if (el0) el0.textContent = profileOk ? euro(b.inc) + ' /mois nets' : 'À compléter';
+
+  const el1 = G('hcMeta1');
+  if (el1) {
+    const r = num('rate');
+    if (r > 0) {
+      const taegD = calcTAEG();
+      const parts = [num('duration') + ' ans'];
+      if (num('apport') > 0) parts.push('Apport ' + euro(num('apport')));
+      if (taegD) parts.push('TAEG ' + taegD.taeg.toFixed(2) + '%');
+      el1.textContent = parts.join(' · ');
+    } else {
+      el1.textContent = 'À compléter';
+    }
+  }
+
+  const price = num('propPrice');
+  const el2 = G('hcMeta2');
+  if (el2) {
+    if (!profileOk) el2.textContent = locked;
+    else if (price > 0) { const d = calcProject(price, num('duration')); el2.textContent = euro(price) + ' — ' + d.dr.toFixed(1) + '% endettem.'; }
+    else el2.textContent = 'Aucun bien saisi';
+  }
+
+  const el3 = G('hcMeta3');
+  if (el3) {
+    if (!profileOk) el3.textContent = locked;
+    else {
+      const n = ['compName0','compName1','compName2'].filter(id => { const e = G(id); return e && e.value.trim(); }).length;
+      el3.textContent = n > 0 ? n + ' bien' + (n > 1 ? 's' : '') + ' comparé' + (n > 1 ? 's' : '') : 'Aucun bien saisi';
+    }
+  }
+
+  const el4 = G('hcMeta4');
+  if (el4) el4.textContent = !profileOk ? locked : b.propMax > 0 ? euro(b.propMax) : 'À compléter';
+
+  const elInv = G('hcMetaInv');
+  if (elInv) {
+    const targetM = num('invTarget');
+    if (targetM > 0) {
+      const inv = calcInverse(targetM);
+      elInv.textContent = inv && inv.propMax > 0
+        ? euro(targetM) + '/mois → ' + euro(inv.propMax)
+        : euro(targetM) + '/mois';
+    } else {
+      elInv.textContent = '—';
+    }
+  }
+
+  const el5 = G('hcMeta5');
+  if (el5) el5.textContent = profileOk ? '—' : locked;
+
+  ['hcCard2','hcCard3','hcCard4','hcCard5'].forEach(id => {
+    const c = G(id); if (c) c.classList.toggle('home-card-locked', !profileOk);
+  });
 }
 
 function setCo(active) {
@@ -57,8 +129,6 @@ function setCo(active) {
   document.querySelectorAll('.co-only').forEach(el => el.classList.toggle('hidden', !active));
   G('soloBtn').classList.toggle('active', !active);
   G('coBtn').classList.toggle('active', active);
-  G('quotite1').value = 100;
-  if (active) G('quotite2').value = 100;
   refresh();
 }
 
@@ -468,51 +538,70 @@ function refreshBudget() {
 
 function refreshInverse() {
   const targetM = num('invTarget');
-  const propMaxEl = G('invPropMax');
-  const borrowEl = G('invBorrow');
-  const propDelta = G('invPropDelta');
-  const borrowDelta = G('invBorrowDelta');
-  const noteEl = G('invNote');
-  if (!propMaxEl) return;
+  const resultsEl = G('invResults');
+  const emptyEl = G('invEmpty');
+  if (!G('invPropMax')) return;
 
   if (targetM <= 0) {
-    propMaxEl.textContent = '—';
-    borrowEl.textContent = '—';
-    if (propDelta) propDelta.textContent = '';
-    if (borrowDelta) borrowDelta.textContent = '';
-    if (noteEl) noteEl.style.display = 'none';
+    if (resultsEl) resultsEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
     return;
   }
+  if (emptyEl) emptyEl.style.display = 'none';
 
   const d = calcInverse(targetM);
   if (!d || d.propMax <= 0) {
-    propMaxEl.textContent = 'Insuffisant';
-    borrowEl.textContent = '—';
-    if (propDelta) propDelta.textContent = '';
-    if (borrowDelta) borrowDelta.textContent = '';
-    if (noteEl) { noteEl.style.display = 'block'; noteEl.textContent = 'Mensualité trop faible pour couvrir les frais annexes.'; }
+    if (resultsEl) resultsEl.style.display = 'none';
+    if (emptyEl) { emptyEl.style.display = 'block'; emptyEl.textContent = 'Mensualité trop faible pour couvrir les frais annexes.'; }
     return;
   }
 
-  propMaxEl.textContent = euro(d.propMax);
-  borrowEl.textContent = euro(d.borrow);
+  if (resultsEl) resultsEl.style.display = 'block';
+
+  // Budget
+  G('invPropMax').textContent = euro(d.propMax);
+  if (G('invTotalEnv')) G('invTotalEnv').textContent = euro(d.env);
+  G('invBorrow').textContent = euro(d.borrow);
+
+  // Détail mensualité
+  if (G('invLoanM')) G('invLoanM').textContent = euro(d.lm);
+  if (G('invInsM')) G('invInsM').textContent = euro(d.insM);
+  if (G('invTotalM')) G('invTotalM').textContent = euro(targetM) + '/mois';
+
+  // Taux d'endettement + reste à vivre
+  const inc = income();
+  const dc = debtCharges();
+  const dr = inc > 0 ? (dc + targetM) / inc * 100 : 0;
+  const rav = inc - dc - targetM - num('otherExpenses');
+  if (G('invDr')) G('invDr').textContent = dr.toFixed(1) + '%';
+  if (G('invRav')) G('invRav').textContent = euro(rav) + '/mois';
+
+  // Badge dossier
+  const badgeEl = G('invBadge');
+  if (badgeEl) {
+    const bg = getDossierBadge(dr, rav);
+    badgeEl.className = 'dossier-badge visible ' + bg.cls;
+    badgeEl.innerHTML = `<span class="badge-icon">${bg.icon}</span><div class="badge-body"><div class="badge-title">${bg.title}</div><div class="badge-sub">${bg.sub}</div></div>`;
+  }
 
   // Delta vs profil
   const b = calcBudget();
-  const diffProp = d.propMax - b.propMax;
-  const diffBorrow = d.borrow - b.borrow;
   const sign = n => n >= 0 ? '+' : '';
-  if (propDelta) propDelta.textContent = sign(diffProp) + euro(diffProp) + ' vs profil';
-  if (borrowDelta) borrowDelta.textContent = sign(diffBorrow) + euro(diffBorrow) + ' vs profil';
+  const deltaEl = G('invDelta');
+  if (deltaEl) {
+    const diffProp = d.propMax - b.propMax;
+    deltaEl.textContent = `vs profil : ${sign(diffProp)}${euro(diffProp)} sur le bien visable`;
+    deltaEl.style.display = 'block';
+  }
 
-  // Note d'avertissement si cible > mensualité profil
+  // Note
+  const noteEl = G('invNote');
   if (noteEl) {
     if (targetM > b.disp) {
       noteEl.style.display = 'block';
-      noteEl.textContent = `⚠ Dépasse votre mensualité calculée depuis le profil (${euro(b.disp)}). Vérifiez votre taux d'endettement.`;
+      noteEl.textContent = `⚠ Dépasse la mensualité max de votre profil (${euro(b.disp)}).`;
     } else {
-      noteEl.style.display = 'block';
-      noteEl.textContent = `ℹ Taux ${num('rate')}%, durée ${num('duration')} ans et apport ${euro(num('apport'))} repris de votre profil.`;
+      noteEl.style.display = 'none';
     }
   }
 }
@@ -675,6 +764,8 @@ function fallbackCopy(txt, btn) {
 
 // ── Comparaison de biens ──────────────────────────────────────
 
+let _numComps = 1;
+
 function initComparison() {
   const isFirstVisit = num('compPrice0') === 0 && num('compPrice1') === 0 && num('compPrice2') === 0;
   if (isFirstVisit) {
@@ -686,14 +777,52 @@ function initComparison() {
     const profileDur = G('duration').value;
     ['compDur0', 'compDur1', 'compDur2'].forEach(id => { G(id).value = profileDur; });
   }
+  // Restaurer le nombre de cards visibles depuis les données sauvegardées
+  _numComps = 1;
+  [1, 2].forEach(i => {
+    const card = G('compCard' + i);
+    if (!card) return;
+    if (num('compPrice' + i) > 0 || (G('compName' + i) && G('compName' + i).value.trim())) {
+      card.classList.remove('hidden');
+      _numComps = i + 1;
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+  const btn = G('addCompBtn');
+  if (btn) btn.style.display = _numComps >= 3 ? 'none' : '';
   refreshComparison();
+}
+
+function addComp() {
+  if (_numComps >= 3) return;
+  _numComps++;
+  const card = G('compCard' + (_numComps - 1));
+  if (card) card.classList.remove('hidden');
+  if (_numComps >= 3) { const btn = G('addCompBtn'); if (btn) btn.style.display = 'none'; }
+  refreshComparison();
+}
+
+function removeComp(idx) {
+  for (let i = idx; i <= 2; i++) {
+    const card = G('compCard' + i);
+    if (card) card.classList.add('hidden');
+    if (G('compPrice' + i)) G('compPrice' + i).value = '';
+    if (G('compWorks' + i)) G('compWorks' + i).value = 0;
+    if (G('compName' + i)) G('compName' + i).value = '';
+  }
+  _numComps = idx;
+  const btn = G('addCompBtn');
+  if (btn) btn.style.display = '';
+  refreshComparison();
+  save();
 }
 
 function refreshComparison() {
   const LETTERS = ['A', 'B', 'C'];
   const BADGE_ORDER = ['badge-solide', 'badge-fincable', 'badge-limite', 'badge-fragile', 'badge-refuse'];
 
-  const props = [0, 1, 2].map(i => {
+  const props = [0, 1, 2].slice(0, _numComps).map(i => {
     const price = num('compPrice' + i);
     const name = G('compName' + i)?.value?.trim() || ('Bien ' + LETTERS[i]);
     return { price, works: num('compWorks' + i), dur: num('compDur' + i) || num('duration'), name, letter: LETTERS[i] };
@@ -705,11 +834,10 @@ function refreshComparison() {
 
   if (props.length === 0) {
     if (empty) empty.style.display = 'block';
-    results.style.display = 'none';
+    results.innerHTML = '';
     return;
   }
   if (empty) empty.style.display = 'none';
-  results.style.display = 'block';
 
   const calcs = props.map(p => {
     const d = calcProject(p.price, p.dur, { works: p.works, agencyFees: 0 });
@@ -719,7 +847,6 @@ function refreshComparison() {
 
   const withinBudget = c => c.tension >= 0;
   const markBest = calcs.length > 1;
-
   const best = (fn, lower = true) => {
     if (!markBest) return calcs.map(() => false);
     const vals = calcs.map(fn);
@@ -727,68 +854,28 @@ function refreshComparison() {
     return calcs.map(c => fn(c) === target);
   };
 
-  const bestTotM   = best(c => c.totM);
-  const bestDr     = best(c => c.dr);
-  const bestRav    = best(c => c.remaining, false);
-  const bestBadge  = best(c => BADGE_ORDER.indexOf(c.badge.cls));
-  const bestTotal  = best(c => c.total);
-
-  const cell = (content, isBest) =>
-    `<td class="ct-val${isBest ? ' ct-best' : ''}">${content}</td>`;
+  const bestTotM  = best(c => c.totM);
+  const bestDr    = best(c => c.dr);
+  const bestRav   = best(c => c.remaining, false);
+  const bestTotal = best(c => c.total);
 
   const drColor = dr => dr <= 35 ? 'var(--success)' : dr <= 38 ? 'var(--warn)' : '#c0392b';
   const fl = ravFloor();
   const ravColor = r => r >= fl * 2.25 ? 'var(--success)' : r >= fl * 1.5 ? 'var(--text)' : r >= fl ? 'var(--warn)' : '#c0392b';
 
+  const cell = (content, isBest) =>
+    `<td class="ct-val${isBest ? ' ct-best' : ''}">${content}</td>`;
+
   const rows = [
-    {
-      label: 'Prix du bien',
-      vals: calcs.map(c => euro(c.price)),
-      bests: calcs.map(() => false)
-    },
-    {
-      label: 'Travaux',
-      vals: calcs.map(c => c.wk > 0 ? euro(c.wk) : '—'),
-      bests: calcs.map(() => false),
-      skip: calcs.every(c => c.wk === 0)
-    },
-    {
-      label: 'Coût total projet',
-      vals: calcs.map(c => euro(c.total)),
-      bests: bestTotal
-    },
-    {
-      label: 'Montant emprunté',
-      vals: calcs.map(c => euro(c.financed)),
-      bests: calcs.map(() => false)
-    },
-    {
-      label: 'Mensualité totale',
-      vals: calcs.map(c => `${euro(c.totM)}<span class="ct-unit">/mois</span>`),
-      bests: bestTotM
-    },
-    {
-      label: 'Taux d\'endettement',
-      vals: calcs.map(c => `<span style="color:${drColor(c.dr)};font-weight:700;">${c.dr.toFixed(1)}%</span>`),
-      bests: bestDr
-    },
-    {
-      label: 'Reste à vivre',
-      vals: calcs.map(c => `<span style="color:${ravColor(c.remaining)};font-weight:700;">${euro(c.remaining)}<span class="ct-unit">/mois</span></span>`),
-      bests: bestRav
-    },
-    {
-      label: 'Dossier',
-      vals: calcs.map(c => `<span class="dossier-badge visible ${c.badge.cls}" style="padding:3px 10px;font-size:.75rem;">${c.badge.icon} ${c.badge.title}</span>`),
-      bests: bestBadge
-    },
-    {
-      label: 'Verdict',
-      vals: calcs.map(c => withinBudget(c)
-        ? '<span style="color:var(--success);font-weight:700;">✓ Dans le budget</span>'
-        : '<span style="color:var(--warn);font-weight:700;">⚠ Hors cible</span>'),
-      bests: calcs.map(c => withinBudget(c))
-    }
+    { label: 'Prix du bien',      vals: calcs.map(c => euro(c.price)),           bests: calcs.map(() => false) },
+    { label: 'Travaux',           vals: calcs.map(c => c.wk > 0 ? euro(c.wk) : '—'), bests: calcs.map(() => false), skip: calcs.every(c => c.wk === 0) },
+    { label: 'Coût total projet', vals: calcs.map(c => euro(c.total)),           bests: bestTotal },
+    { label: 'Montant emprunté',  vals: calcs.map(c => euro(c.financed)),        bests: calcs.map(() => false) },
+    { label: 'Mensualité totale', vals: calcs.map(c => `${euro(c.totM)}<span class="ct-unit">/mois</span>`), bests: bestTotM },
+    { label: 'Taux d\'endettement', vals: calcs.map(c => `<span style="color:${drColor(c.dr)};font-weight:700;">${c.dr.toFixed(1)}%</span>`), bests: bestDr },
+    { label: 'Reste à vivre',     vals: calcs.map(c => `<span style="color:${ravColor(c.remaining)};font-weight:700;">${euro(c.remaining)}<span class="ct-unit">/mois</span></span>`), bests: bestRav },
+    { label: 'Dossier',          vals: calcs.map(c => `<span class="dossier-badge visible ${c.badge.cls}" style="padding:3px 10px;font-size:.75rem;">${c.badge.icon} ${c.badge.title}</span>`), bests: calcs.map(() => false) },
+    { label: 'Verdict',          vals: calcs.map(c => withinBudget(c) ? '<span style="color:var(--success);font-weight:700;">✓ Dans le budget</span>' : '<span style="color:var(--warn);font-weight:700;">⚠ Hors cible</span>'), bests: calcs.map(c => withinBudget(c)) }
   ];
 
   let html = `<div class="comp-table-wrap"><table class="comp-table">
@@ -805,24 +892,18 @@ function refreshComparison() {
 
   html += '</tbody></table></div>';
 
-  // Recommandation automatique
   if (calcs.length > 1) {
     const inBudget = calcs.filter(withinBudget);
     if (inBudget.length > 0) {
+      const BADGE_ORDER2 = ['badge-solide', 'badge-fincable', 'badge-limite', 'badge-fragile', 'badge-refuse'];
       const top = inBudget.reduce((a, b) => {
-        const sa = BADGE_ORDER.indexOf(a.badge.cls) * 10000 - a.remaining;
-        const sb = BADGE_ORDER.indexOf(b.badge.cls) * 10000 - b.remaining;
+        const sa = BADGE_ORDER2.indexOf(a.badge.cls) * 10000 - a.remaining;
+        const sb = BADGE_ORDER2.indexOf(b.badge.cls) * 10000 - b.remaining;
         return sa < sb ? a : b;
       });
-      html += `<div class="status ok" style="margin-top:14px;">
-        <strong>Recommandation : ${top.name}</strong>
-        <div>Meilleur dossier dans votre budget — ${top.badge.icon} ${top.badge.title}, reste à vivre ${euro(top.remaining)}/mois, endettement ${top.dr.toFixed(1)}%.</div>
-      </div>`;
+      html += `<div class="status ok" style="margin-top:14px;"><strong>Recommandation : ${top.name}</strong><div>${top.badge.icon} ${top.badge.title} — mensualité ${euro(top.totM)}/mois, endettement ${top.dr.toFixed(1)}%.</div></div>`;
     } else {
-      html += `<div class="status warn" style="margin-top:14px;">
-        <strong>Aucun bien dans votre enveloppe actuelle.</strong>
-        <div>Tous les biens renseignés dépassent votre mensualité cible. Augmentez votre apport, la durée du prêt, ou ciblez un prix inférieur.</div>
-      </div>`;
+      html += `<div class="status warn" style="margin-top:14px;"><strong>Aucun bien dans votre enveloppe.</strong><div>Tous dépassent votre mensualité cible. Augmentez l'apport, la durée, ou ciblez un prix inférieur.</div></div>`;
     }
   }
 
@@ -839,6 +920,7 @@ function refresh() {
   refreshInverse();
   if (currentPage === 5) refreshComparison();
   if (currentMode === 'rvb') refreshRvb();
+  if (currentPage === -1) refreshHome();
   refreshFloatBar();
   save();
 }

@@ -42,38 +42,178 @@
     </div>
   </header>
 
-  <!-- Mode tabs -->
-  <div class="mode-tabs" role="tablist">
-    <button class="mode-tab active" id="tabBudget" onclick="setMode('budget')">&#127968; Mon budget d'achat</button>
-    <button class="mode-tab" id="tabRvb" onclick="setMode('rvb')">&#9878; Louer ou acheter ?</button>
+  <!-- ═══════════ PAGE D'ACCUEIL ═══════════ -->
+  <div id="page-home" class="home-page active">
+    <div class="home-grid">
+
+      <button class="home-card" id="hcCard0" onclick="goTo('profiles')">
+        <div class="hc-icon">👤</div>
+        <div class="hc-body">
+          <div class="hc-title">Mon profil financier</div>
+          <div class="hc-desc">Revenus &amp; charges</div>
+          <div class="hc-meta" id="hcMeta0">À compléter</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
+      <button class="home-card" id="hcCard1" onclick="goTo('montages')">
+        <div class="hc-icon">💰</div>
+        <div class="hc-body">
+          <div class="hc-title">Mon financement</div>
+          <div class="hc-desc">Taux, durée, apport &amp; frais</div>
+          <div class="hc-meta" id="hcMeta1">À compléter</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
+      <button class="home-card" id="hcCard4" onclick="goTo(6)">
+        <div class="hc-icon">📋</div>
+        <div class="hc-body">
+          <div class="hc-title">Mon bilan final</div>
+          <div class="hc-desc">Synthèse complète de votre projet</div>
+          <div class="hc-meta" id="hcMeta4">—</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
+      <button class="home-card" id="hcCardInv" onclick="goTo('mensualite')">
+        <div class="hc-icon">&#127919;</div>
+        <div class="hc-body">
+          <div class="hc-title">Mensualit&#233; cible</div>
+          <div class="hc-desc">Simuler depuis une mensualit&#233; souhait&#233;e</div>
+          <div class="hc-meta" id="hcMetaInv">&#8212;</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
+      <button class="home-card" id="hcCard2" onclick="goTo(4)">
+        <div class="hc-icon">🏠</div>
+        <div class="hc-body">
+          <div class="hc-title">Tester un bien</div>
+          <div class="hc-desc">Mensualité, endettement, faisabilité</div>
+          <div class="hc-meta" id="hcMeta2">Aucun bien saisi</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
+      <button class="home-card" id="hcCard3" onclick="goTo(5)">
+        <div class="hc-icon">📊</div>
+        <div class="hc-body">
+          <div class="hc-title">Comparer des biens</div>
+          <div class="hc-desc">Jusqu'à 3 biens côte à côte</div>
+          <div class="hc-meta" id="hcMeta3">Aucun bien saisi</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
+      <button class="home-card" id="hcCard5" onclick="goTo('rvb')">
+        <div class="hc-icon">⚖️</div>
+        <div class="hc-body">
+          <div class="hc-title">Louer ou acheter ?</div>
+          <div class="hc-desc">Comparaison patrimoniale</div>
+          <div class="hc-meta" id="hcMeta5">—</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ═══════════ GESTION PROFILS ═══════════ -->
+  <div id="page-profiles" class="mode-section">
+    <div class="section-nav">
+      <button class="back-home-btn" onclick="goTo('home')">&#8592; Accueil</button>
+    </div>
+    <div class="card">
+      <div class="page-head">
+        <h2>Mon profil financier</h2>
+        <p>Sélectionnez un profil à modifier ou créez-en un nouveau.</p>
+      </div>
+      <div id="profileList"></div>
+      <div class="pli-footer">
+        <button class="btn primary" onclick="promptNewProfileAndEdit(false)">+ Nouveau profil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MONTAGES FINANCIERS ═══════════ -->
+  <div id="page-montages" class="mode-section">
+    <div class="section-nav">
+      <button class="back-home-btn" onclick="goTo('home')">&#8592; Accueil</button>
+    </div>
+    <div class="card">
+      <div class="page-head">
+        <h2>Mon financement</h2>
+        <p>Comparez plusieurs montages financiers pour le même profil.</p>
+      </div>
+      <div id="montageList"></div>
+      <div class="pli-footer">
+        <button class="btn primary" onclick="promptNewMontageAndEdit(false)">+ Nouveau montage</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552; MENSUALIT&#201; CIBLE &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552; -->
+  <div id="page-mensualite" class="mode-section">
+    <div class="section-nav">
+      <button class="back-home-btn" onclick="goTo('home')">&#8592; Accueil</button>
+    </div>
+    <div class="card">
+      <div class="page-head">
+        <h2>Mensualit&#233; cible</h2>
+        <p>Saisissez une mensualit&#233; souhait&#233;e pour voir le budget et la faisabilit&#233; correspondants.</p>
+      </div>
+
+      <div class="field" style="max-width:320px;">
+        <label for="invTarget">Mensualit&#233; max souhait&#233;e (&#8364;/mois)</label>
+        <input id="invTarget" type="number" min="0" step="50" placeholder="ex : 1 100" inputmode="decimal">
+      </div>
+
+      <div id="invResults" style="display:none;">
+        <!-- Budget -->
+        <div class="results r3" style="margin-top:18px;">
+          <div class="result hl-green"><div class="rlabel">Bien visable max</div><div class="rvalue mono" id="invPropMax">&#8212;</div></div>
+          <div class="result hl-blue"><div class="rlabel">Projet total</div><div class="rvalue mono" id="invTotalEnv">&#8212;</div></div>
+          <div class="result"><div class="rlabel">Capital empruntable</div><div class="rvalue mono" id="invBorrow">&#8212;</div></div>
+        </div>
+
+        <!-- D&#233;tail mensualit&#233; -->
+        <div class="monthly-box" style="margin-top:14px;">
+          <div class="mrow"><span>Mensualit&#233; pr&#234;t (capital + int&#233;r&#234;ts)</span><strong class="mono" id="invLoanM">&#8212;</strong></div>
+          <div class="mrow"><span>Assurance emprunteur</span><strong class="mono" id="invInsM">&#8212;</strong></div>
+          <div class="mrow total"><span>Mensualit&#233; totale cible</span><strong class="mono" id="invTotalM">&#8212;</strong></div>
+        </div>
+
+        <!-- Taux d'endettement + badge -->
+        <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
+          <div class="monthly-box" style="flex:1;min-width:160px;">
+            <div class="mrow"><span>Taux d&#x27;endettement</span><strong class="mono" id="invDr">&#8212;</strong></div>
+            <div class="mrow"><span>Reste &#224; vivre</span><strong class="mono" id="invRav">&#8212;</strong></div>
+          </div>
+          <div id="invBadge" class="dossier-badge" style="flex:1;min-width:180px;"></div>
+        </div>
+
+        <!-- Delta vs profil -->
+        <div class="inv-note" id="invNote" style="display:none;margin-top:10px;"></div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:10px;" id="invDelta"></div>
+      </div>
+
+      <div id="invEmpty" style="color:var(--muted);font-size:.88rem;padding:20px 0;">
+        Saisissez une mensualit&#233; pour voir les r&#233;sultats.
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════ MODE BUDGET ═══════════ -->
-  <div class="mode-section active" id="modeBudget">
+  <div class="mode-section" id="modeBudget">
 
-    <nav class="phase-nav" id="phaseNav">
-      <button class="phase-btn active" id="ph0" onclick="goTo(0)">
-        <span class="ph-num">Phase 1</span>
-        <span class="ph-label">Mon profil</span>
-        <span class="ph-sub" id="ph0sub">Revenus, charges, financement</span>
-        <span class="ph-dots" id="ph0dots">
-          <span class="ph-dot" id="pd0"></span>
-          <span class="ph-dot" id="pd1"></span>
-          <span class="ph-dot" id="pd2"></span>
-          <span class="ph-dot" id="pd3"></span>
-        </span>
-      </button>
-      <button class="phase-btn" id="ph1" onclick="goTo(4)">
-        <span class="ph-num">Phase 2</span>
-        <span class="ph-label">Simulation</span>
-        <span class="ph-sub" id="ph1sub">Tester un bien &amp; bilan</span>
-      </button>
-    </nav>
+    <div class="section-nav">
+      <button class="back-home-btn" onclick="goTo('home')">&#8592; Accueil</button>
+    </div>
 
     <!-- PAGE 0 : Revenus -->
     <div class="page active" id="page-0"><div class="card">
       <div class="page-head">
-        <span class="eyebrow">Étape 1 / 4</span>
         <h2>Mes revenus</h2>
         <p>Renseignez vos revenus nets mensuels pour calculer votre capacité d'emprunt.</p>
       </div>
@@ -123,7 +263,7 @@
         </div>
       </div>
       <div class="nav-bar">
-        <button class="btn ghost" disabled>&#8592; Précédent</button>
+        <button class="btn secondary" onclick="goTo('home')">&#8592; Accueil</button>
         <button class="btn primary" onclick="goTo(1)">Suivant &#8594;</button>
       </div>
     </div></div>
@@ -131,7 +271,6 @@
     <!-- PAGE 1 : Charges -->
     <div class="page" id="page-1"><div class="card">
       <div class="page-head">
-        <span class="eyebrow">Étape 2 / 4</span>
         <h2>Mes charges</h2>
         <p>Deux types de charges aux rôles très différents.</p>
       </div>
@@ -180,14 +319,13 @@
       </div>
       <div class="nav-bar">
         <button class="btn secondary" onclick="goTo(0)">&#8592; Précédent</button>
-        <button class="btn primary" onclick="goTo(2)">Suivant &#8594;</button>
+        <button class="btn primary" onclick="goTo('profiles')">Terminer &#10003;</button>
       </div>
     </div></div>
 
     <!-- PAGE 2 : Financement -->
     <div class="page" id="page-2"><div class="card">
       <div class="page-head">
-        <span class="eyebrow">Étape 3 / 4</span>
         <h2>Mon financement</h2>
         <p>Assurance, durée, taux et frais annexes.</p>
       </div>
@@ -293,39 +431,16 @@
         </div>
       </div>
       <div class="nav-bar">
-        <button class="btn secondary" onclick="goTo(1)">&#8592; Précédent</button>
-        <button class="btn primary" onclick="goTo(3)">Voir mon budget &#8594;</button>
+        <button class="btn secondary" onclick="goTo('home')">&#8592; Accueil</button>
+        <button class="btn primary" onclick="goTo('montages')">Terminer &#10003;</button>
       </div>
     </div></div>
 
     <!-- PAGE 3 : Budget maximum -->
     <div class="page" id="page-3"><div class="card">
       <div class="page-head">
-        <span class="eyebrow">Étape 4 / 4</span>
         <h2>Mon budget maximum</h2>
         <p>Calculé depuis votre profil. Assurance et frais annexes inclus.</p>
-      </div>
-
-      <!-- Calculateur inversé -->
-      <div class="inv-calc">
-        <div class="inv-header">🔄 Simuler depuis une mensualité cible <span style="font-weight:400;">— optionnel</span></div>
-        <div class="inv-fields">
-          <div class="field" style="margin:0;">
-            <label for="invTarget" style="font-size:.82rem;">Mensualité max souhaitée</label>
-            <input id="invTarget" type="number" min="0" step="50" placeholder="ex : 1 100" inputmode="decimal" style="margin-top:4px;">
-          </div>
-          <div class="inv-result-box">
-            <div class="inv-result-label">Bien visable</div>
-            <div class="inv-result-val mono" id="invPropMax">—</div>
-            <div class="inv-result-delta" id="invPropDelta"></div>
-          </div>
-          <div class="inv-result-box">
-            <div class="inv-result-label">Capital empruntable</div>
-            <div class="inv-result-val mono" id="invBorrow">—</div>
-            <div class="inv-result-delta" id="invBorrowDelta"></div>
-          </div>
-        </div>
-        <div class="inv-note" id="invNote" style="display:none;"></div>
       </div>
 
       <div class="results r3">
@@ -367,14 +482,13 @@
 
       <div class="nav-bar">
         <button class="btn secondary" onclick="goTo(2)">&#8592; Modifier</button>
-        <button class="btn primary" onclick="goTo(4)">Tester un bien &#8594;</button>
+        <button class="btn primary" onclick="goTo(6)">Voir mon bilan &#8594;</button>
       </div>
     </div></div>
 
     <!-- PAGE 4 : Tester un bien -->
     <div class="page" id="page-4"><div class="card">
       <div class="page-head">
-        <span class="eyebrow">Étape 5 / 6</span>
         <h2>Tester un bien précis</h2>
         <p>Vérifiez si un bien entre dans votre enveloppe.</p>
       </div>
@@ -571,25 +685,23 @@
       </div>
 
       <div class="nav-bar">
-        <button class="btn secondary" onclick="goTo(3)">&#8592; Mon budget</button>
-        <button class="btn primary" onclick="goTo(5)">Comparer des biens &#8594;</button>
+        <button class="btn secondary" onclick="goTo('home')">&#8592; Accueil</button>
       </div>
     </div></div>
 
     <!-- PAGE 5 : Comparer des biens -->
     <div class="page" id="page-5"><div class="card">
       <div class="page-head">
-        <span class="eyebrow">Étape 6 / 6</span>
         <h2>Comparer des biens</h2>
-        <p>Renseignez jusqu'à 3 biens pour les comparer côte à côte avec votre profil.</p>
+        <p>Ajoutez jusqu'à 3 biens et comparez-les côte à côte.</p>
       </div>
 
-      <!-- Inputs : 3 cartes de bien -->
-      <div class="comp-inputs">
-        <div class="comp-input-card">
+      <div class="comp-inputs" id="compInputs">
+
+        <div class="comp-input-card" id="compCard0">
           <div class="comp-card-head">
             <span class="comp-card-letter">A</span>
-            <input class="comp-name-input" id="compName0" type="text" placeholder="Nom (optionnel)" maxlength="30">
+            <input class="comp-name-input" id="compName0" type="text" placeholder="Nom du bien (optionnel)" maxlength="30">
           </div>
           <div class="comp-fields">
             <div class="field">
@@ -601,7 +713,7 @@
               <input id="compWorks0" type="number" min="0" step="500" inputmode="decimal" value="0">
             </div>
             <div class="field">
-              <label for="compDur0">Durée</label>
+              <label for="compDur0">Dur&#233;e du pr&#234;t</label>
               <select id="compDur0">
                 <option value="15">15 ans</option>
                 <option value="20" selected>20 ans</option>
@@ -611,10 +723,11 @@
           </div>
         </div>
 
-        <div class="comp-input-card">
+        <div class="comp-input-card hidden" id="compCard1">
           <div class="comp-card-head">
             <span class="comp-card-letter" style="background:var(--warn);">B</span>
-            <input class="comp-name-input" id="compName1" type="text" placeholder="Nom (optionnel)" maxlength="30">
+            <input class="comp-name-input" id="compName1" type="text" placeholder="Nom du bien (optionnel)" maxlength="30">
+            <button class="comp-remove-btn" onclick="removeComp(1)" title="Supprimer">&#10005;</button>
           </div>
           <div class="comp-fields">
             <div class="field">
@@ -626,7 +739,7 @@
               <input id="compWorks1" type="number" min="0" step="500" inputmode="decimal" value="0">
             </div>
             <div class="field">
-              <label for="compDur1">Durée</label>
+              <label for="compDur1">Dur&#233;e du pr&#234;t</label>
               <select id="compDur1">
                 <option value="15">15 ans</option>
                 <option value="20" selected>20 ans</option>
@@ -636,10 +749,11 @@
           </div>
         </div>
 
-        <div class="comp-input-card">
+        <div class="comp-input-card hidden" id="compCard2">
           <div class="comp-card-head">
             <span class="comp-card-letter" style="background:#7a5c9a;">C</span>
-            <input class="comp-name-input" id="compName2" type="text" placeholder="Nom (optionnel)" maxlength="30">
+            <input class="comp-name-input" id="compName2" type="text" placeholder="Nom du bien (optionnel)" maxlength="30">
+            <button class="comp-remove-btn" onclick="removeComp(2)" title="Supprimer">&#10005;</button>
           </div>
           <div class="comp-fields">
             <div class="field">
@@ -651,7 +765,7 @@
               <input id="compWorks2" type="number" min="0" step="500" inputmode="decimal" value="0">
             </div>
             <div class="field">
-              <label for="compDur2">Durée</label>
+              <label for="compDur2">Dur&#233;e du pr&#234;t</label>
               <select id="compDur2">
                 <option value="15">15 ans</option>
                 <option value="20" selected>20 ans</option>
@@ -660,18 +774,18 @@
             </div>
           </div>
         </div>
+
       </div>
 
-      <!-- Résultats -->
-      <div id="compEmpty" class="status neutral">
-        <strong>Renseignez au moins un prix pour voir la comparaison.</strong>
-        <div>Bien A est pré-rempli depuis votre étape 5 si vous y avez entré un prix.</div>
+      <button class="btn secondary" id="addCompBtn" onclick="addComp()" style="margin-bottom:20px;">+ Ajouter un bien &#224; comparer</button>
+
+      <div id="compEmpty" class="status neutral" style="display:none;">
+        <strong>Renseignez un prix pour voir la comparaison.</strong>
       </div>
-      <div id="compResults" style="display:none;"></div>
+      <div id="compResults"></div>
 
       <div class="nav-bar">
-        <button class="btn secondary" onclick="goTo(4)">&#8592; Tester un bien</button>
-        <button class="btn primary" onclick="goTo(6)">Voir mon bilan &#8594;</button>
+        <button class="btn secondary" onclick="goTo('home')">&#8592; Accueil</button>
       </div>
     </div></div>
 
@@ -751,9 +865,7 @@
       </div>
 
       <div class="nav-bar" style="flex-wrap:wrap;gap:10px;">
-        <button class="btn secondary" onclick="goTo(5)">&#8592; Comparer</button>
         <button class="btn primary" id="copyBilanBtn" onclick="copyBilan()">📋 Copier le résumé</button>
-        <button class="btn ghost" onclick="resetAll()">&#8635; Recommencer</button>
       </div>
     </div></div>
 
@@ -761,6 +873,9 @@
 
   <!-- ═══════════ MODE RvB ═══════════ -->
   <div class="mode-section" id="modeRvb">
+    <div class="section-nav">
+      <button class="back-home-btn" onclick="goTo('home')">&#8592; Accueil</button>
+    </div>
     <div class="rvb-banner">
       <div class="rvb-banner-icon">&#9878;</div>
       <div>
@@ -942,7 +1057,11 @@
 <script src="js/main.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
+    if (location.hostname === 'localhost') {
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+    } else {
+      navigator.serviceWorker.register('./sw.js');
+    }
   }
 </script>
 </body>
