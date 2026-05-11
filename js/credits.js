@@ -194,6 +194,7 @@ function openCreditForm(id) {
   G('cfSubtype').value           = c?.subtype          || 'principale';
   G('cfStartDate').value         = c?.startDate        || '';
   G('cfInsurance').value         = c?.insuranceMonthly || 0;
+  G('cfLoyer').value             = c?.loyerPercu       || 0;
   G('cfError').textContent       = '';
 
   _creditLignes = c?.lignes?.length
@@ -211,9 +212,12 @@ function closeCreditForm() {
 }
 
 function updateCreditFormSubtype() {
-  const isImmo = G('cfType').value === 'immo';
-  const row    = G('cfSubtypeRow');
-  if (row) row.style.display = isImmo ? '' : 'none';
+  const isImmo   = G('cfType').value === 'immo';
+  const isLocatif = isImmo && G('cfSubtype').value === 'locatif';
+  const row      = G('cfSubtypeRow');
+  const loyerRow = G('cfLoyerRow');
+  if (row)      row.style.display      = isImmo    ? '' : 'none';
+  if (loyerRow) loyerRow.style.display = isLocatif ? '' : 'none';
   _renderLignes();
 }
 
@@ -237,6 +241,7 @@ function saveCreditForm() {
     subtype:          G('cfType').value === 'immo' ? G('cfSubtype').value : null,
     startDate:        G('cfStartDate').value,
     insuranceMonthly: parseFloat(G('cfInsurance').value) || 0,
+    loyerPercu:       parseFloat(G('cfLoyer').value)     || 0,
     lignes: _creditLignes.map((l, i) => ({
       id:       l.id,
       name:     l.name || ('Ligne ' + (i + 1)),
@@ -314,6 +319,12 @@ function renderCreditList() {
         </div>
       </div>
       ${lignesDetail}
+      ${c.subtype === 'locatif' && c.loyerPercu > 0 ? `
+      <div class="credit-loyer-row">
+        <span>Loyer perçu</span>
+        <span style="color:var(--success);font-weight:700;">${euro(c.loyerPercu)}/mois</span>
+        <span style="color:var(--muted);font-size:.75rem;">Effort mensuel net : ${euro(Math.max(m.totM - c.loyerPercu, 0))}/mois</span>
+      </div>` : ''}
       <div class="credit-progress-wrap">
         <div class="credit-progress-bar" style="width:${pctBar}%"></div>
       </div>

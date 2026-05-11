@@ -913,6 +913,13 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   padding: 6px 12px; border-bottom: 1px solid var(--border);
 }
 .credit-ligne-row:last-child { border-bottom: none; }
+.credit-loyer-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 7px 12px; border-radius: 9px; margin-bottom: 10px;
+  background: var(--success-soft); border: 1px solid rgba(67,122,34,.2);
+  font-size: .82rem;
+}
+.credit-loyer-row span:first-child { font-weight: 600; color: var(--success); }
 .clr-name { font-weight: 700; color: var(--text); flex: 1; min-width: 80px; }
 .clr-info { color: var(--muted); }
 .clr-crd  { color: var(--primary); font-weight: 600; margin-left: auto; }
