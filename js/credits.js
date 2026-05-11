@@ -40,9 +40,13 @@ function _computeLigne(ligne, globalK) {
   // Si la ligne a sa propre date de départ, on calcule k depuis elle
   let k = globalK;
   if (ligne.startDate) {
-    const [sy, sm] = ligne.startDate.split('-').map(Number);
-    const now = new Date();
-    k = Math.max(0, (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm));
+    const start = new Date(ligne.startDate);
+    const now   = new Date();
+    // Nombre de mois écoulés depuis le 1er prélèvement
+    k = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    // Si le jour du prélèvement n'est pas encore passé ce mois-ci, on ne le compte pas
+    if (now.getDate() < start.getDate()) k -= 1;
+    k = Math.max(0, k);
   }
   const lk = Math.min(k, n);
 
@@ -184,8 +188,8 @@ function _renderLignes() {
             oninput="updateLigneField('${l.id}','duration',this.value)">
         </div>
         <div class="field">
-          <label style="font-size:.82rem;">1er paiement</label>
-          <input type="month" value="${l.startDate || ''}"
+          <label style="font-size:.82rem;">Date 1er paiement</label>
+          <input type="date" value="${l.startDate || ''}"
             onchange="updateLigneField('${l.id}','startDate',this.value)">
         </div>
       </div>
