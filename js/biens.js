@@ -206,7 +206,6 @@ function renderBienList() {
     if (credit) {
       const m   = computeCredit(credit);
       const pctBar = Math.round(m.pct * 100);
-      const ap  = computeApportResiduel(b, credit);
 
       creditHtml = `
         <div class="bien-credit-block">
