@@ -70,3 +70,29 @@ Logique dans `getDossierBadge(dr, rav)` (ui.js).
 
 Fetch de l'API ECB dans `fetchRates()` (main.js), fallback statique si échec.
 Les taux affichés (rate15/rate20/rate25) sont indicatifs, ne modifient pas le calcul.
+
+## Feature à implémenter — Navigation par cartes (hub)
+
+Objectif : remplacer la nav linéaire (Phase 1 / Phase 2) par une **page d'accueil hub** avec une carte par fonctionnalité. L'utilisateur choisit directement où aller.
+
+### Cartes prévues (2 colonnes)
+
+| Carte | Destination | Résumé affiché |
+|---|---|---|
+| 👤 Mon profil financier | pages 0-1 (Revenus + Charges) | Revenus nets totaux |
+| 💰 Mon financement | pages 2-3 (Financement + Budget max) | Budget max calculé |
+| 🏠 Tester un bien | page 4 | Prix + taux endettement |
+| 📊 Comparer des biens | page 5 | Nombre de biens saisis |
+| 📋 Mon bilan final | page 6 | — |
+| ⚖️ Louer ou acheter ? | mode RvB | — |
+
+### Comportement
+- La home est le landing par défaut (plus de redirection goTo(4) au chargement)
+- Chaque section a un bouton "← Accueil" pour revenir au hub
+- Les onglets mode (Budget / RvB) disparaissent — "Louer ou acheter ?" devient une carte
+- Fin de section (ex: page 1 Suivant, page 3 Suivant) → retour à la home
+- Les cartes affichent les métriques clés en live (`refreshHome()`)
+
+### Piège à éviter
+La tentative précédente a cassé l'app car `setMode()` référençait `tabBudget`/`tabRvb` supprimés.
+Bien tester sur localhost avant tout déploiement. Créer une branche git dédiée.
