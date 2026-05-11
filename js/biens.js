@@ -16,26 +16,79 @@ function loadBiens() {
 
 // ── Calcul IRA et apport résiduel ─────────────────────────────
 
-function computeIRA(credit) {
-  const m = computeCredit(credit);
-  let totalIRA = 0;
-  for (const ligne of (credit.lignes || [])) {
-    const l = _computeLigne(ligne, m.k);
-    if (!l.active || l.crd <= 0) continue;
-    const rate = (parseFloat(ligne.rate) || 0) / 100;
-    if (rate === 0) continue; // PTZ et prêts à 0% : pas d'IRA
-    const ira6months = l.crd * (rate / 12) * 6;
-    const ira3pct    = l.crd * 0.03;
-    totalIRA += Math.min(ira6months, ira3pct);
+// Capital restant dû d'une ligne à un k donné (sans lire la date DOM)
+function _crdAtK(ligne, k) {
+  const P = parseFloat(ligne.amount) || 0;
+  const r = (parseFloat(ligne.rate) || 0) / 100 / 12;
+  const n = parseInt(ligne.duration) || 0;
+  const paliers = (ligne.paliers || []).filter(p => parseInt(p.duration) > 0);
+  const lk = Math.min(Math.max(k, 0), n);
+
+  if (paliers.length > 0) {
+    let bal = P, done = 0;
+    for (const palier of paliers) {
+      const np = parseInt(palier.duration) || 0;
+      const mp = parseFloat(palier.mensualite) || 0;
+      const months = Math.min(lk - done, np);
+      if (months > 0) {
+        bal = r > 0
+          ? Math.max(bal * Math.pow(1+r, months) - mp * (Math.pow(1+r, months)-1)/r, 0)
+          : Math.max(bal - mp * months, 0);
+        done += months;
+      }
+      if (done >= lk) break;
+    }
+    return Math.max(bal, 0);
   }
-  return Math.round(totalIRA * 100) / 100;
+  const lm = r > 0 ? P * r / (1 - Math.pow(1+r, -n)) : (n > 0 ? P / n : 0);
+  const crd = r > 0
+    ? P * Math.pow(1+r, lk) - lm * (Math.pow(1+r, lk)-1)/r
+    : Math.max(P - lm * lk, 0);
+  return Math.max(crd, 0);
 }
 
-function computeApportResiduel(bien, credit) {
+function _iraAtCrd(crd, annualRate) {
+  if (annualRate <= 0 || crd <= 0) return 0;
+  return Math.min(crd * (annualRate/12) * 6, crd * 0.03);
+}
+
+// Génère les lignes du tableau (une par année)
+function computeProjectionTable(bien, credit) {
   if (!bien.currentValue) return null;
-  const m   = computeCredit(credit);
-  const ira = computeIRA(credit);
-  return { net: bien.currentValue - m.crd - ira, ira, crd: m.crd };
+  const m = computeCredit(credit);
+
+  // k actuel de chaque ligne
+  const ligneKs = (credit.lignes || []).map(l => _kFromDate(l.startDate, m.k));
+  const maxRemaining = (credit.lignes || []).reduce((max, l, i) => {
+    const n = parseInt(l.duration) || 0;
+    return Math.max(max, n - ligneKs[i]);
+  }, 0);
+
+  const rows = [];
+  const now = new Date();
+  const maxYears = Math.min(Math.ceil(maxRemaining / 12), 30);
+
+  for (let yr = 0; yr <= maxYears; yr++) {
+    const monthsAhead = yr * 12;
+    const targetDate = new Date(now.getFullYear(), now.getMonth() + monthsAhead, 1);
+    const label = yr === 0
+      ? "Aujourd'hui"
+      : targetDate.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+
+    let totalCrd = 0, totalIRA = 0;
+    (credit.lignes || []).forEach((ligne, i) => {
+      const kTarget = ligneKs[i] + monthsAhead;
+      const crd = _crdAtK(ligne, kTarget);
+      totalCrd += crd;
+      totalIRA += _iraAtCrd(crd, parseFloat(ligne.rate) || 0);
+    });
+
+    const ira = Math.round(totalIRA * 100) / 100;
+    rows.push({ label, crd: totalCrd, ira, net: bien.currentValue - totalCrd - ira, yr });
+
+    if (totalCrd <= 0) break; // prêt soldé
+  }
+  return rows;
 }
 
 // ── CRUD ───────────────────────────────────────────────────────
@@ -178,19 +231,44 @@ function renderBienList() {
               <div class="cm-value cm-warn">${euro(m.totalCost)}</div>
             </div>
           </div>
-          ${ap !== null ? `
-          <div class="bien-apport-residuel">
-            <div class="bar-title">
-              <span>&#128179; Apport résiduel en cas de vente</span>
-              <span class="bar-ira">IRA estimées : ${euro(ap.ira)}</span>
-            </div>
-            <div class="bar-formula">
-              ${euro(b.currentValue)} valeur − ${euro(ap.crd)} capital − ${euro(ap.ira)} IRA
-            </div>
-            <div class="bar-net" style="color:${ap.net >= 0 ? 'var(--success)' : '#c0392b'};">
-              ${ap.net >= 0 ? '+' : ''}${euro(ap.net)}
-            </div>
-          </div>` : ''}
+          ${b.currentValue ? (() => {
+            const rows = computeProjectionTable(b, credit);
+            if (!rows) return '';
+            const today = rows[0];
+            return `
+            <details class="fees-detail" style="margin-top:10px;">
+              <summary class="fees-detail-summary">
+                &#128179; Apport r&#233;siduel en cas de vente &mdash;
+                <span style="color:${today.net>=0?'var(--success)':'#c0392b'};font-weight:800;">
+                  ${today.net>=0?'+':''}${euro(today.net)}
+                </span>
+                aujourd'hui
+              </summary>
+              <div class="fees-detail-body" style="padding:0;overflow-x:auto;">
+                <table class="amort-table" style="min-width:360px;">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;">Date de vente</th>
+                      <th>Capital restant</th>
+                      <th>IRA estim&#233;es</th>
+                      <th>Apport r&#233;siduel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rows.map(row => `<tr${row.yr===0?' style="background:var(--primary-soft);"':''}>
+                      <td style="text-align:left;font-weight:${row.yr===0?700:400};">${row.label}</td>
+                      <td>${euro(row.crd)}</td>
+                      <td class="td-interest">${euro(row.ira)}</td>
+                      <td style="font-weight:700;color:${row.net>=0?'var(--success)':'#c0392b'};">${row.net>=0?'+':''}${euro(row.net)}</td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+                <div style="font-size:.7rem;color:var(--muted);padding:8px 14px;">
+                  * IRA = min(6 mois d'int&#233;r&#234;ts, 3% capital restant) &bull; PTZ exclus &bull; Valeur du bien suppos&#233;e constante
+                </div>
+              </div>
+            </details>`;
+          })() : ''}
         </div>`;
     } else if (creditMissing) {
       creditHtml = `
