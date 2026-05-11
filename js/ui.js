@@ -1,7 +1,7 @@
 // ── Navigation ────────────────────────────────────────────────
 
 function _hideAll() {
-  ['page-home','page-profiles','page-montages','page-mensualite','page-credits','modeBudget','modeRvb'].forEach(id => {
+  ['page-home','page-profiles','page-montages','page-mensualite','page-credits','page-biens','modeBudget','modeRvb'].forEach(id => {
     const el = G(id); if (el) el.classList.remove('active');
   });
 }
@@ -24,6 +24,13 @@ function goTo(step) {
     currentPage = -1; currentMode = 'budget';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     renderMontageList(); return;
+  }
+  if (step === 'biens') {
+    _hideAll(); G('page-biens').classList.add('active');
+    currentPage = -1; currentMode = 'budget';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof renderBienList === 'function') renderBienList();
+    return;
   }
   if (step === 'credits') {
     _hideAll(); G('page-credits').classList.add('active');
@@ -125,6 +132,16 @@ function refreshHome() {
 
   const el5 = G('hcMeta5');
   if (el5) el5.textContent = profileOk ? '—' : locked;
+
+  const elBiens = G('hcMetaBiens');
+  if (elBiens && typeof _biens !== 'undefined') {
+    if (_biens.length === 0) {
+      elBiens.textContent = 'Aucun bien enregistré';
+    } else {
+      const total = _biens.reduce((s, b) => s + (b.price || 0), 0);
+      elBiens.textContent = _biens.length + ' bien' + (_biens.length > 1 ? 's' : '') + ' · ' + euro(total);
+    }
+  }
 
   const elCred = G('hcMetaCredits');
   if (elCred && typeof _credits !== 'undefined') {

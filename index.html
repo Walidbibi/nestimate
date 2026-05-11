@@ -116,6 +116,16 @@
         <span class="hc-arrow">&#8594;</span>
       </button>
 
+      <button class="home-card" id="hcCardBiens" onclick="goTo('biens')">
+        <div class="hc-icon">🏘️</div>
+        <div class="hc-body">
+          <div class="hc-title">Mes biens immobiliers</div>
+          <div class="hc-desc">Patrimoine &amp; prêts associés</div>
+          <div class="hc-meta" id="hcMetaBiens">Aucun bien enregistré</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
       <button class="home-card" id="hcCardCredits" onclick="goTo('credits')">
         <div class="hc-icon">🏦</div>
         <div class="hc-body">
@@ -126,6 +136,30 @@
         <span class="hc-arrow">&#8594;</span>
       </button>
 
+    </div>
+  </div>
+
+  <!-- ═══════════ MES BIENS IMMOBILIERS ═══════════ -->
+  <div id="page-biens" class="mode-section">
+    <div class="section-nav">
+      <button class="back-home-btn" onclick="goTo('home')">&#8592; Accueil</button>
+    </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="results r3">
+        <div class="result"><div class="rlabel">Biens</div><div class="rvalue mono" id="bienSumN">—</div></div>
+        <div class="result hl-green"><div class="rlabel">Valeur d'achat totale</div><div class="rvalue mono" id="bienSumVal">—</div></div>
+        <div class="result"><div class="rlabel">Capital restant (prêts)</div><div class="rvalue mono" id="bienSumDebt">—</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="page-head">
+        <h2>Mes biens immobiliers</h2>
+        <p>Listez vos biens et associez-leur le prêt utilisé pour les financer.</p>
+      </div>
+      <div id="bienList"></div>
+      <div style="margin-top:16px;">
+        <button class="btn primary" onclick="openBienForm(null)">+ Nouveau bien</button>
+      </div>
     </div>
   </div>
 
@@ -1089,6 +1123,50 @@
   </div>
 </div>
 
+<!-- Popup formulaire bien immobilier -->
+<div class="popup-overlay" id="bienFormPopup" onclick="if(event.target===this)closeBienForm()">
+  <div class="popup-box" style="max-width:500px;">
+    <button class="popup-close" onclick="closeBienForm()">&#10005;</button>
+    <h3 id="bienFormTitle" style="margin-bottom:16px;">Nouveau bien</h3>
+    <div class="form-grid">
+      <div class="field" style="grid-column:1/-1;">
+        <label for="bfName">Nom du bien</label>
+        <input id="bfName" type="text" placeholder="Ex : Appartement Toulouse Pinel">
+      </div>
+      <div class="field">
+        <label for="bfType">Type</label>
+        <select id="bfType">
+          <option value="principale">R&#233;sidence principale</option>
+          <option value="locatif">Investissement locatif</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="bfPurchaseDate">Date d'achat</label>
+        <input id="bfPurchaseDate" type="month">
+      </div>
+      <div class="field">
+        <label for="bfPrice">Prix d'achat (&#8364;)</label>
+        <input id="bfPrice" type="number" min="0" step="1000" inputmode="decimal" placeholder="250 000">
+      </div>
+      <div class="field">
+        <label for="bfCurrentValue">Valeur actuelle estim&#233;e (&#8364;)</label>
+        <input id="bfCurrentValue" type="number" min="0" step="1000" inputmode="decimal" placeholder="Optionnel">
+        <div class="hint">Pour calculer la plus-value latente.</div>
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label for="bfCreditId">Pr&#234;t associ&#233;</label>
+        <select id="bfCreditId"></select>
+        <div class="hint">Seuls les pr&#234;ts immobiliers sont affich&#233;s. Si votre pr&#234;t n'existe pas encore, enregistrez d'abord le bien puis cr&#233;ez le pr&#234;t.</div>
+      </div>
+    </div>
+    <p id="bfError" style="color:var(--warn);font-size:.82rem;min-height:1.2em;margin:10px 0 4px;"></p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn secondary" onclick="closeBienForm()">Annuler</button>
+      <button class="btn primary" onclick="saveBienForm()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Popup formulaire crédit -->
 <div class="popup-overlay" id="creditFormPopup" onclick="if(event.target===this)closeCreditForm()">
   <div class="popup-box" style="max-width:540px;max-height:90vh;overflow-y:auto;">
@@ -1183,6 +1261,7 @@
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>
 <script src="js/credits.js"></script>
+<script src="js/biens.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
     if (location.hostname === 'localhost') {

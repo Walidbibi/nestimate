@@ -354,6 +354,7 @@ function saveCreditForm() {
   closeCreditForm();
   renderCreditList();
   if (typeof refreshHome === 'function') refreshHome();
+  if (typeof _afterSaveCreditForBien === 'function') _afterSaveCreditForBien(credit.id);
 }
 
 // ── Rendu liste ────────────────────────────────────────────────
