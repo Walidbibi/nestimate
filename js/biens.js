@@ -47,9 +47,10 @@ function _crdAtK(ligne, k) {
   return Math.max(crd, 0);
 }
 
-function _iraAtCrd(crd, annualRate) {
-  if (annualRate <= 0 || crd <= 0) return 0;
-  return Math.min(crd * (annualRate/12) * 6, crd * 0.03);
+function _iraAtCrd(crd, annualRatePct) {
+  if (annualRatePct <= 0 || crd <= 0) return 0;
+  const r = annualRatePct / 100; // convertir % en décimal
+  return Math.min(crd * r / 12 * 6, crd * 0.03);
 }
 
 // Génère les lignes du tableau (une par année)
@@ -57,8 +58,13 @@ function computeProjectionTable(bien, credit) {
   if (!bien.currentValue) return null;
   const m = computeCredit(credit);
 
-  // k actuel de chaque ligne
+  // k actuel de chaque ligne (depuis sa propre date ou la date globale du crédit)
   const ligneKs = (credit.lignes || []).map(l => _kFromDate(l.startDate, m.k));
+
+  // Si aucune date n'est renseignée → projection impossible depuis aujourd'hui
+  const noDates = ligneKs.every(k => k === 0) && m.k === 0;
+  if (noDates) return { noDates: true };
+
   const maxRemaining = (credit.lignes || []).reduce((max, l, i) => {
     const n = parseInt(l.duration) || 0;
     return Math.max(max, n - ligneKs[i]);
@@ -233,6 +239,9 @@ function renderBienList() {
           ${b.currentValue && credit ? (() => {
             const rows = computeProjectionTable(b, credit);
             if (!rows) return '';
+            if (rows.noDates) return `<div class="bien-no-credit" style="margin-top:10px;font-size:.8rem;">
+              &#9432; Renseignez la <strong>date de 1er paiement</strong> sur chaque ligne de pr&#234;t pour voir la projection de vente.
+            </div>`;
             const today = rows[0];
             return `
             <details class="fees-detail" style="margin-top:10px;">
