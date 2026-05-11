@@ -14,6 +14,30 @@ function loadBiens() {
   } catch(e) { _biens = []; }
 }
 
+// ── Calcul IRA et apport résiduel ─────────────────────────────
+
+function computeIRA(credit) {
+  const m = computeCredit(credit);
+  let totalIRA = 0;
+  for (const ligne of (credit.lignes || [])) {
+    const l = _computeLigne(ligne, m.k);
+    if (!l.active || l.crd <= 0) continue;
+    const rate = (parseFloat(ligne.rate) || 0) / 100;
+    if (rate === 0) continue; // PTZ et prêts à 0% : pas d'IRA
+    const ira6months = l.crd * (rate / 12) * 6;
+    const ira3pct    = l.crd * 0.03;
+    totalIRA += Math.min(ira6months, ira3pct);
+  }
+  return Math.round(totalIRA * 100) / 100;
+}
+
+function computeApportResiduel(bien, credit) {
+  if (!bien.currentValue) return null;
+  const m   = computeCredit(credit);
+  const ira = computeIRA(credit);
+  return { net: bien.currentValue - m.crd - ira, ira, crd: m.crd };
+}
+
 // ── CRUD ───────────────────────────────────────────────────────
 
 function deleteBien(id) {
@@ -127,8 +151,10 @@ function renderBienList() {
 
     let creditHtml = '';
     if (credit) {
-      const m = computeCredit(credit);
+      const m   = computeCredit(credit);
       const pctBar = Math.round(m.pct * 100);
+      const ap  = computeApportResiduel(b, credit);
+
       creditHtml = `
         <div class="bien-credit-block">
           <div class="bien-credit-header">
@@ -152,6 +178,19 @@ function renderBienList() {
               <div class="cm-value cm-warn">${euro(m.totalCost)}</div>
             </div>
           </div>
+          ${ap !== null ? `
+          <div class="bien-apport-residuel">
+            <div class="bar-title">
+              <span>&#128179; Apport résiduel en cas de vente</span>
+              <span class="bar-ira">IRA estimées : ${euro(ap.ira)}</span>
+            </div>
+            <div class="bar-formula">
+              ${euro(b.currentValue)} valeur − ${euro(ap.crd)} capital − ${euro(ap.ira)} IRA
+            </div>
+            <div class="bar-net" style="color:${ap.net >= 0 ? 'var(--success)' : '#c0392b'};">
+              ${ap.net >= 0 ? '+' : ''}${euro(ap.net)}
+            </div>
+          </div>` : ''}
         </div>`;
     } else if (creditMissing) {
       creditHtml = `
