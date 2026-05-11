@@ -10,43 +10,94 @@ function saveCredits() {
 function loadCredits() {
   try {
     const raw = localStorage.getItem(LS_CREDITS);
-    if (raw) _credits = JSON.parse(raw);
+    if (raw) _credits = JSON.parse(raw).map(_migrateLegacyCredit);
   } catch(e) { _credits = []; }
 }
 
-// ── Calcul des métriques d'un crédit ──────────────────────────
+// Migration format legacy (amount/rate/duration à la racine → lignes[])
+function _migrateLegacyCredit(c) {
+  if (!c.lignes && c.amount !== undefined) {
+    c.lignes = [{
+      id: 'l_legacy',
+      name: 'Prêt principal',
+      amount:   parseFloat(c.amount)   || 0,
+      rate:     parseFloat(c.rate)     || 0,
+      duration: parseInt(c.duration)   || 240,
+    }];
+    delete c.amount; delete c.rate; delete c.duration;
+  }
+  if (!c.lignes) c.lignes = [];
+  return c;
+}
+
+// ── Calcul d'une ligne ─────────────────────────────────────────
+
+function _computeLigne(ligne, k) {
+  const P = parseFloat(ligne.amount)   || 0;
+  const r = (parseFloat(ligne.rate) || 0) / 100 / 12;
+  const n = parseInt(ligne.duration)   || 0;
+  const lk = Math.min(k, n); // cette ligne peut être terminée
+
+  const lm = r > 0
+    ? P * r / (1 - Math.pow(1 + r, -n))
+    : (n > 0 ? P / n : 0);
+
+  let crd = r > 0
+    ? P * Math.pow(1+r, lk) - lm * (Math.pow(1+r, lk) - 1) / r
+    : Math.max(P - lm * lk, 0);
+  crd = Math.max(crd, 0);
+
+  const paidCapital  = P - crd;
+  const paidInterest = Math.max(lk * lm - paidCapital, 0);
+  const totalCostLigne = Math.max(n * lm - P, 0); // intérêts totaux ligne
+  const active = lk < n; // la ligne est encore en cours
+
+  return { lm, crd, paidCapital, paidInterest, paidTotal: lk * lm, totalCostLigne, active, n, lk };
+}
+
+// ── Calcul consolidé d'un crédit ──────────────────────────────
 
 function computeCredit(c) {
-  const P  = parseFloat(c.amount) || 0;
-  const r  = (parseFloat(c.rate) || 0) / 100 / 12;
-  const n  = parseInt(c.duration) || 0;
-  const insM = parseFloat(c.insuranceMonthly) || 0;
-
-  const lm = r > 0 ? P * r / (1 - Math.pow(1 + r, -n)) : (n > 0 ? P / n : 0);
-  const totM = lm + insM;
+  const insM   = parseFloat(c.insuranceMonthly) || 0;
+  const lignes = c.lignes || [];
 
   // Mensualités écoulées depuis la date de départ
   let k = 0;
   if (c.startDate) {
     const [sy, sm] = c.startDate.split('-').map(Number);
     const now = new Date();
-    k = (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm);
-    k = Math.max(0, Math.min(k, n));
+    k = Math.max(0, (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm));
   }
 
-  // Capital restant dû
-  let crd = r > 0
-    ? P * Math.pow(1+r, k) - lm * (Math.pow(1+r, k) - 1) / r
-    : Math.max(P - lm * k, 0);
-  crd = Math.max(crd, 0);
+  let totalLm = 0, totalCrd = 0, totalPaidCapital = 0;
+  let totalPaidInterest = 0, totalPaidLignes = 0, totalCost = 0;
+  let maxDuration = 0;
 
-  const paidCapital  = P - crd;
-  const paidInterest = Math.max(k * lm - paidCapital, 0);
-  const paidTotal    = k * totM;
-  const totalCost    = n * totM - P;
-  const pct          = n > 0 ? k / n : 0;
+  for (const ligne of lignes) {
+    const l = _computeLigne(ligne, k);
+    if (l.active) totalLm += l.lm;   // on ne compte que les lignes encore actives
+    totalCrd          += l.crd;
+    totalPaidCapital  += l.paidCapital;
+    totalPaidInterest += l.paidInterest;
+    totalPaidLignes   += l.paidTotal;
+    totalCost         += l.totalCostLigne;
+    maxDuration        = Math.max(maxDuration, l.n);
+  }
 
-  return { lm, totM, crd, paidCapital, paidInterest, paidTotal, totalCost, pct, k, n };
+  // Assurance (sur toute la durée max)
+  totalCost += maxDuration * insM;
+
+  const totM       = totalLm + insM;
+  const paidTotal  = totalPaidLignes + k * insM;
+  const totalAmount= lignes.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
+  const pct        = maxDuration > 0 ? Math.min(k / maxDuration, 1) : 0;
+
+  return {
+    lm: totalLm, totM, crd: totalCrd,
+    paidCapital: totalPaidCapital, paidInterest: totalPaidInterest,
+    paidTotal, totalCost, totalAmount,
+    pct, k, n: maxDuration,
+  };
 }
 
 // ── CRUD ───────────────────────────────────────────────────────
@@ -59,26 +110,98 @@ function deleteCredit(id) {
   if (typeof refreshHome === 'function') refreshHome();
 }
 
-// ── Formulaire crédit ──────────────────────────────────────────
+// ── Formulaire crédit — lignes dynamiques ──────────────────────
 
 let _editingCreditId = null;
+let _creditLignes    = [];
+
+function _newLigneId() { return 'l_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
+
+function addLigne() {
+  _creditLignes.push({ id: _newLigneId(), name: '', amount: '', rate: '', duration: '' });
+  _renderLignes();
+}
+
+function removeLigne(id) {
+  if (_creditLignes.length <= 1) return;
+  _creditLignes = _creditLignes.filter(l => l.id !== id);
+  _renderLignes();
+}
+
+function updateLigneField(id, field, value) {
+  const l = _creditLignes.find(l => l.id === id);
+  if (l) l[field] = value;
+}
+
+function _renderLignes() {
+  const container = G('cfLignes');
+  if (!container) return;
+
+  const isImmo = G('cfType').value === 'immo';
+  const LABELS = {
+    principale: ['Prêt principal', 'PTZ', 'Prêt employeur', 'PAS'],
+    locatif:    ['Prêt principal', 'Prêt relais', 'Prêt in fine'],
+    conso:      ['Prêt consommation'],
+  };
+  const subtype  = isImmo ? (G('cfSubtype').value || 'principale') : 'conso';
+  const defaults = LABELS[subtype] || [];
+
+  container.innerHTML = _creditLignes.map((l, i) => {
+    const placeholder = defaults[i] || ('Ligne ' + (i + 1));
+    const canRemove   = _creditLignes.length > 1;
+    return `<div class="ligne-card">
+      <div class="ligne-head">
+        <span class="ligne-num">Ligne ${i + 1}</span>
+        ${canRemove ? `<button class="comp-remove-btn" onclick="removeLigne('${l.id}')" title="Supprimer">&#10005;</button>` : ''}
+      </div>
+      <div class="field" style="margin-bottom:8px;">
+        <label style="font-size:.82rem;">Nom</label>
+        <input type="text" value="${escHtml(l.name || '')}" placeholder="${placeholder}"
+          oninput="updateLigneField('${l.id}','name',this.value)" style="min-height:38px;">
+      </div>
+      <div class="comp-fields">
+        <div class="field">
+          <label style="font-size:.82rem;">Montant (&#8364;)</label>
+          <input type="number" value="${l.amount || ''}" min="0" step="1000" inputmode="decimal" placeholder="180 000"
+            oninput="updateLigneField('${l.id}','amount',this.value)">
+        </div>
+        <div class="field">
+          <label style="font-size:.82rem;">Taux (%)</label>
+          <input type="number" value="${l.rate || ''}" min="0" step="0.01" inputmode="decimal" placeholder="3.15"
+            oninput="updateLigneField('${l.id}','rate',this.value)">
+        </div>
+        <div class="field">
+          <label style="font-size:.82rem;">Dur&#233;e (mois)</label>
+          <input type="number" value="${l.duration || ''}" min="1" step="1" inputmode="decimal" placeholder="240"
+            oninput="updateLigneField('${l.id}','duration',this.value)">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Bouton "Ajouter une ligne" — uniquement pour immo
+  const addBtn = G('cfAddLigneBtn');
+  if (addBtn) addBtn.style.display = isImmo ? '' : 'none';
+}
 
 function openCreditForm(id) {
   _editingCreditId = id || null;
   const c = id ? _credits.find(x => x.id === id) : null;
 
   G('creditFormTitle').textContent = c ? 'Modifier le crédit' : 'Nouveau crédit';
-  G('cfName').value       = c?.name              || '';
-  G('cfType').value       = c?.type              || 'immo';
-  G('cfSubtype').value    = c?.subtype           || 'principale';
-  G('cfAmount').value     = c?.amount            || '';
-  G('cfRate').value       = c?.rate              || '';
-  G('cfDuration').value   = c?.duration          || '';
-  G('cfStartDate').value  = c?.startDate         || '';
-  G('cfInsurance').value  = c?.insuranceMonthly  || 0;
-  G('cfError').textContent = '';
+  G('cfName').value              = c?.name             || '';
+  G('cfType').value              = c?.type             || 'immo';
+  G('cfSubtype').value           = c?.subtype          || 'principale';
+  G('cfStartDate').value         = c?.startDate        || '';
+  G('cfInsurance').value         = c?.insuranceMonthly || 0;
+  G('cfError').textContent       = '';
+
+  _creditLignes = c?.lignes?.length
+    ? c.lignes.map(l => ({ ...l }))
+    : [{ id: _newLigneId(), name: '', amount: '', rate: '', duration: '' }];
 
   updateCreditFormSubtype();
+  _renderLignes();
   G('creditFormPopup').classList.add('open');
 }
 
@@ -89,31 +212,38 @@ function closeCreditForm() {
 
 function updateCreditFormSubtype() {
   const isImmo = G('cfType').value === 'immo';
-  const row = G('cfSubtypeRow');
+  const row    = G('cfSubtypeRow');
   if (row) row.style.display = isImmo ? '' : 'none';
+  _renderLignes();
 }
 
 function saveCreditForm() {
-  const name     = G('cfName').value.trim();
-  const amount   = parseFloat(G('cfAmount').value);
-  const rate     = parseFloat(G('cfRate').value);
-  const duration = parseInt(G('cfDuration').value);
+  const name = G('cfName').value.trim();
+  if (!name) { G('cfError').textContent = 'Le nom est requis.'; return; }
 
-  if (!name)                  { G('cfError').textContent = 'Le nom est requis.';      return; }
-  if (!amount  || amount <= 0){ G('cfError').textContent = 'Le montant est requis.';  return; }
-  if (!rate    || rate <= 0)  { G('cfError').textContent = 'Le taux est requis.';     return; }
-  if (!duration|| duration<=0){ G('cfError').textContent = 'La durée est requise.';  return; }
+  // Valider chaque ligne
+  for (let i = 0; i < _creditLignes.length; i++) {
+    const l = _creditLignes[i];
+    const a = parseFloat(l.amount), d = parseInt(l.duration);
+    if (!a || a <= 0) { G('cfError').textContent = `Ligne ${i+1} : montant requis.`; return; }
+    if (!d || d <= 0) { G('cfError').textContent = `Ligne ${i+1} : durée requise.`; return; }
+    // Taux 0 autorisé (PTZ)
+  }
 
   const credit = {
     id:               _editingCreditId || ('cred_' + Date.now()),
     name,
     type:             G('cfType').value,
     subtype:          G('cfType').value === 'immo' ? G('cfSubtype').value : null,
-    amount,
-    rate,
-    duration,
     startDate:        G('cfStartDate').value,
     insuranceMonthly: parseFloat(G('cfInsurance').value) || 0,
+    lignes: _creditLignes.map((l, i) => ({
+      id:       l.id,
+      name:     l.name || ('Ligne ' + (i + 1)),
+      amount:   parseFloat(l.amount)   || 0,
+      rate:     parseFloat(l.rate)     || 0,
+      duration: parseInt(l.duration)   || 0,
+    })),
   };
 
   if (_editingCreditId) {
@@ -157,24 +287,40 @@ function renderCreditList() {
 
     const pctBar = Math.round(m.pct * 100);
 
+    // Détail par ligne (affiché si > 1 ligne)
+    const lignesDetail = c.lignes.length > 1
+      ? `<div class="credit-lignes-detail">
+          ${c.lignes.map(l => {
+            const ll = _computeLigne(l, m.k);
+            return `<div class="credit-ligne-row">
+              <span class="clr-name">${escHtml(l.name || 'Ligne')}</span>
+              <span class="clr-info">${euro(l.amount)} · ${parseFloat(l.rate).toFixed(2)}% · ${l.duration} mois</span>
+              <span class="clr-crd">${ll.active ? 'restant ' + euro(ll.crd) : '✓ soldé'}</span>
+            </div>`;
+          }).join('')}
+        </div>`
+      : '';
+
     return `<div class="credit-card">
       <div class="credit-card-head">
         <div>
           <div class="credit-name">${escHtml(c.name)}</div>
           <span class="credit-type-badge" style="color:${typeColor};border-color:${typeColor}55;background:${typeColor}12;">${typeLabel}</span>
+          ${c.lignes.length > 1 ? `<span class="credit-type-badge" style="color:var(--muted);border-color:var(--border);background:var(--surface-2);margin-left:4px;">${c.lignes.length} lignes</span>` : ''}
         </div>
         <div class="credit-actions">
           <button class="pli-btn" onclick="openCreditForm('${c.id}')" title="Modifier">✏</button>
           <button class="pli-btn pli-delete" onclick="deleteCredit('${c.id}')" title="Supprimer">✕</button>
         </div>
       </div>
+      ${lignesDetail}
       <div class="credit-progress-wrap">
         <div class="credit-progress-bar" style="width:${pctBar}%"></div>
       </div>
       <div class="credit-progress-label">${pctBar}% remboursé · mensualité ${m.k} / ${m.n}</div>
       <div class="credit-metrics">
         <div class="credit-metric">
-          <div class="cm-label">Mensualité</div>
+          <div class="cm-label">Mensualité totale</div>
           <div class="cm-value">${euro(m.totM)}<span style="font-weight:400;font-size:.72rem;color:var(--muted);">/mois</span></div>
         </div>
         <div class="credit-metric">
@@ -241,7 +387,6 @@ async function parsePdfFile() {
     const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     status.textContent = `${pdf.numPages} page(s) détectée(s)… Analyse du tableau…`;
 
-    // Extraire tous les tokens avec leur position
     let items = [];
     for (let p = 1; p <= pdf.numPages; p++) {
       const page    = await pdf.getPage(p);
@@ -288,33 +433,24 @@ function _groupByRow(items, tol) {
 }
 
 function _parseAmortTable(rows) {
-  // Synonymes par colonne
   const COLS = {
     date:      ['date', 'période', 'periode'],
     crd:       ['capital restant', 'restant dû', 'restant du', 'solde', 'crd', 'capital dû', 'encours'],
-    interest:  ['intérêts', 'interets', 'intérêt', 'interet', 'int.', 'int '],
-    capital:   ['capital amorti', 'amortissement', 'part capital', 'remb. cap', 'capital remb'],
+    interest:  ['intérêts', 'interets', 'intérêt', 'interet', 'int.'],
+    capital:   ['capital amorti', 'amortissement', 'part capital', 'remb. cap'],
     payment:   ['échéance', 'echeance', 'mensualité', 'mensualite', 'total échéance'],
-    insurance: ['assurance', 'adi', 'prime d\'ass'],
+    insurance: ['assurance', 'adi', 'prime'],
   };
 
-  // Trouver la ligne d'en-tête
-  let headerIdx = -1;
-  let colX = {};
-
+  let headerIdx = -1, colX = {};
   for (let i = 0; i < Math.min(rows.length, 25); i++) {
     const text = rows[i].map(t => t.str.toLowerCase()).join(' ');
-    const hasCrd      = COLS.crd.some(k => text.includes(k));
-    const hasInterest = COLS.interest.some(k => text.includes(k));
-    if (hasCrd && hasInterest) {
+    if (COLS.crd.some(k => text.includes(k)) && COLS.interest.some(k => text.includes(k))) {
       headerIdx = i;
-      // Associer chaque colonne à une position x
       for (const [col, patterns] of Object.entries(COLS)) {
         for (const token of rows[i]) {
-          const low = token.str.toLowerCase();
-          if (patterns.some(p => low.includes(p)) && !colX[col]) {
+          if (patterns.some(p => token.str.toLowerCase().includes(p)) && !colX[col])
             colX[col] = token.x;
-          }
         }
       }
       break;
@@ -322,21 +458,14 @@ function _parseAmortTable(rows) {
   }
   if (headerIdx === -1 || !colX.crd) return null;
 
-  // Extraire les lignes de données
   const dataRows = [];
   for (let i = headerIdx + 1; i < rows.length; i++) {
     if (rows[i].length < 3) continue;
-    const cell = col => {
-      if (colX[col] === undefined) return null;
-      return rows[i].reduce((best, t) =>
-        Math.abs(t.x - colX[col]) < Math.abs((best?.x ?? 9999) - colX[col]) ? t : best
-      , null)?.str ?? null;
-    };
+    const cell = col => colX[col] === undefined ? null :
+      rows[i].reduce((b, t) => Math.abs(t.x - colX[col]) < Math.abs((b?.x ?? 9999) - colX[col]) ? t : b, null)?.str ?? null;
     const rowObj = {};
     for (const col of Object.keys(COLS)) rowObj[col] = cell(col);
-    const hasNum = Object.values(rowObj).some(v => v && /\d/.test(v));
-    if (hasNum) dataRows.push(rowObj);
-    // Arrêt si ligne de total
+    if (Object.values(rowObj).some(v => v && /\d/.test(v))) dataRows.push(rowObj);
     const txt = rows[i].map(t => t.str.toLowerCase()).join(' ');
     if (dataRows.length > 3 && /^total\b/.test(txt)) break;
   }
@@ -347,43 +476,39 @@ function _parseAmortTable(rows) {
     const n = parseFloat(str.replace(/[€\s]/g, '').replace(/\./g, '').replace(',', '.'));
     return isFinite(n) ? n : null;
   };
-
   const parseDate = str => {
     if (!str) return null;
     let m;
-    if ((m = str.match(/(\d{1,2})\/(\d{4})/)))   return new Date(+m[2], +m[1]-1, 1);
-    if ((m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return new Date(+m[3], +m[2]-1, 1);
-    if ((m = str.match(/(\d{4})-(\d{2})/)))       return new Date(+m[1], +m[2]-1, 1);
+    if ((m = str.match(/(\d{1,2})\/(\d{4})/)))          return new Date(+m[2], +m[1]-1, 1);
+    if ((m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)))return new Date(+m[3], +m[2]-1, 1);
+    if ((m = str.match(/(\d{4})-(\d{2})/)))             return new Date(+m[1], +m[2]-1, 1);
     return null;
   };
 
-  const first = dataRows[0];
+  const first     = dataRows[0];
   const firstCrd  = pn(first.crd);
   const firstCap  = pn(first.capital);
   const amount    = firstCrd !== null && firstCap !== null ? firstCrd + firstCap : firstCrd;
   const payment   = pn(first.payment);
   const insurance = pn(first.insurance);
 
-  // Trouver la ligne courante par date
   const today = new Date();
-  let currentIdx = dataRows.length - 1;
-  let hasDates = false;
+  let currentIdx = dataRows.length - 1, hasDates = false;
   for (let i = 0; i < dataRows.length; i++) {
     const d = parseDate(dataRows[i].date);
     if (d) { hasDates = true; if (d <= today) currentIdx = i; }
   }
 
-  const current   = dataRows[currentIdx];
-  const crd       = pn(current.crd);
-  const paidRows  = dataRows.slice(0, currentIdx + 1);
-  const paidInt   = paidRows.reduce((s, r) => s + (pn(r.interest) || 0), 0);
-  const paidTotal = (currentIdx + 1) * ((payment || 0) + (insurance || 0));
-  const totInt    = dataRows.reduce((s, r) => s + (pn(r.interest) || 0), 0);
-  const totIns    = (insurance || 0) * dataRows.length;
+  const current    = dataRows[currentIdx];
+  const crd        = pn(current.crd);
+  const paidRows   = dataRows.slice(0, currentIdx + 1);
+  const paidInt    = paidRows.reduce((s, r) => s + (pn(r.interest) || 0), 0);
+  const paidTotal  = (currentIdx + 1) * ((payment || 0) + (insurance || 0));
+  const totInt     = dataRows.reduce((s, r) => s + (pn(r.interest) || 0), 0);
 
   return {
     amount, payment, insurance, crd, paidTotal, paidInt,
-    totalCost: totInt + totIns,
+    totalCost: totInt + (insurance || 0) * dataRows.length,
     duration: dataRows.length,
     currentRow: currentIdx + 1,
     totalRows: dataRows.length,
@@ -392,14 +517,14 @@ function _parseAmortTable(rows) {
 }
 
 function _showPdfResult(data) {
-  G('prAmount').textContent   = data.amount   ? euro(data.amount)   : '—';
-  G('prPayment').textContent  = data.payment  ? euro(data.payment) + '/mois' : '—';
-  G('prInsurance').textContent= data.insurance? euro(data.insurance)+ '/mois' : '—';
-  G('prCrd').textContent      = data.crd      ? euro(data.crd)      : '—';
-  G('prPaid').textContent     = data.paidTotal? euro(data.paidTotal): '—';
-  G('prTotalCost').textContent= data.totalCost? euro(data.totalCost): '—';
-  G('prDuration').textContent = data.duration + ' mensualités';
-  G('prCurrentRow').textContent = data.hasDates
+  G('prAmount').textContent    = data.amount    ? euro(data.amount)    : '—';
+  G('prPayment').textContent   = data.payment   ? euro(data.payment)  + '/mois' : '—';
+  G('prInsurance').textContent = data.insurance ? euro(data.insurance)+ '/mois' : '—';
+  G('prCrd').textContent       = data.crd       ? euro(data.crd)       : '—';
+  G('prPaid').textContent      = data.paidTotal ? euro(data.paidTotal) : '—';
+  G('prTotalCost').textContent = data.totalCost ? euro(data.totalCost) : '—';
+  G('prDuration').textContent  = data.duration + ' mensualités';
+  G('prCurrentRow').textContent= data.hasDates
     ? `Mensualité ${data.currentRow} / ${data.totalRows}`
     : `Dernière mensualité (${data.totalRows})`;
   G('pdfParserResult').style.display = 'block';
@@ -412,21 +537,27 @@ function importParsedCredit() {
   closePdfParser();
   openCreditForm(null);
 
-  if (data.amount)   G('cfAmount').value   = Math.round(data.amount);
-  if (data.duration) G('cfDuration').value = data.duration;
-  if (data.insurance)G('cfInsurance').value= data.insurance.toFixed(2);
+  // Pré-remplir la première ligne avec les données parsées
+  if (_creditLignes.length > 0) {
+    const l = _creditLignes[0];
+    l.name = 'Prêt principal';
+    if (data.amount)   l.amount   = Math.round(data.amount);
+    if (data.duration) l.duration = data.duration;
 
-  // Retrouver le taux par bisection depuis mensualité + capital + durée
-  if (data.payment && data.amount && data.duration) {
-    const P = data.amount, m = data.payment, n = data.duration;
-    let lo = 0.00001, hi = 3;
-    for (let i = 0; i < 120; i++) {
-      const mid = (lo + hi) / 2;
-      const r   = mid / 100 / 12;
-      const calc = r > 0 ? P * r / (1 - Math.pow(1+r, -n)) : P / n;
-      calc > m ? hi = mid : lo = mid;
+    // Retrouver le taux par bisection
+    if (data.payment && data.amount && data.duration) {
+      const P = data.amount, m = data.payment, n = data.duration;
+      let lo = 0.00001, hi = 3;
+      for (let i = 0; i < 120; i++) {
+        const mid = (lo + hi) / 2;
+        const r   = mid / 100 / 12;
+        const calc = r > 0 ? P * r / (1 - Math.pow(1+r, -n)) : P / n;
+        calc > m ? hi = mid : lo = mid;
+      }
+      l.rate = ((lo + hi) / 2).toFixed(2);
     }
-    G('cfRate').value = ((lo + hi) / 2).toFixed(2);
+    if (data.insurance) G('cfInsurance').value = data.insurance.toFixed(2);
+    _renderLignes();
   }
 }
 

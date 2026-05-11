@@ -891,3 +891,28 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 .cm-value { font-size: .88rem; font-weight: 800; letter-spacing: -.02em; }
 .cm-warn { color: var(--warn); }
 @media (max-width: 560px) { .credit-metrics { grid-template-columns: repeat(2, 1fr); } }
+
+/* Lignes de prêt dans le formulaire */
+.ligne-card {
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; background: var(--surface-2); margin-bottom: 10px;
+}
+.ligne-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ligne-num { font-size: .75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .05em; }
+
+/* Détail lignes dans la liste */
+.credit-lignes-detail {
+  border: 1px solid var(--border); border-radius: 9px;
+  overflow: hidden; margin-bottom: 10px; font-size: .78rem;
+}
+.credit-ligne-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 12px; border-bottom: 1px solid var(--border);
+}
+.credit-ligne-row:last-child { border-bottom: none; }
+.clr-name { font-weight: 700; color: var(--text); flex: 1; min-width: 80px; }
+.clr-info { color: var(--muted); }
+.clr-crd  { color: var(--primary); font-weight: 600; margin-left: auto; }

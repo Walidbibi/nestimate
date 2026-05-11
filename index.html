@@ -1091,13 +1091,15 @@
 
 <!-- Popup formulaire crédit -->
 <div class="popup-overlay" id="creditFormPopup" onclick="if(event.target===this)closeCreditForm()">
-  <div class="popup-box" style="max-width:500px;">
+  <div class="popup-box" style="max-width:540px;max-height:90vh;overflow-y:auto;">
     <button class="popup-close" onclick="closeCreditForm()">&#10005;</button>
     <h3 id="creditFormTitle" style="margin-bottom:16px;">Nouveau crédit</h3>
-    <div class="form-grid">
+
+    <!-- Infos générales -->
+    <div class="form-grid" style="margin-bottom:16px;">
       <div class="field" style="grid-column:1/-1;">
         <label for="cfName">Nom du crédit</label>
-        <input id="cfName" type="text" placeholder="Ex : Prêt immo résidence principale">
+        <input id="cfName" type="text" placeholder="Ex : Achat résidence principale">
       </div>
       <div class="field">
         <label for="cfType">Type</label>
@@ -1108,33 +1110,28 @@
       </div>
       <div class="field" id="cfSubtypeRow">
         <label for="cfSubtype">Destination</label>
-        <select id="cfSubtype">
-          <option value="principale">Résidence principale</option>
+        <select id="cfSubtype" onchange="_renderLignes()">
+          <option value="principale">R&#233;sidence principale</option>
           <option value="locatif">Investissement locatif</option>
         </select>
       </div>
       <div class="field">
-        <label for="cfAmount">Montant initial (&#8364;)</label>
-        <input id="cfAmount" type="number" min="0" step="1000" inputmode="decimal" placeholder="200 000">
-      </div>
-      <div class="field">
-        <label for="cfRate">Taux nominal (%)</label>
-        <input id="cfRate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="3.15">
-      </div>
-      <div class="field">
-        <label for="cfDuration">Durée (mois)</label>
-        <input id="cfDuration" type="number" min="1" step="1" inputmode="decimal" placeholder="240">
-      </div>
-      <div class="field">
-        <label for="cfStartDate">Date de départ</label>
+        <label for="cfStartDate">Date de d&#233;part</label>
         <input id="cfStartDate" type="month">
       </div>
-      <div class="field" style="grid-column:1/-1;">
-        <label for="cfInsurance">Assurance mensuelle (&#8364;)</label>
+      <div class="field">
+        <label for="cfInsurance">Assurance mensuelle totale (&#8364;)</label>
         <input id="cfInsurance" type="number" min="0" step="1" inputmode="decimal" value="0">
+        <div class="hint">Couvre l'ensemble des lignes de pr&#234;t.</div>
       </div>
     </div>
-    <p id="cfError" style="color:var(--warn);font-size:.82rem;min-height:1.2em;margin:10px 0 4px;"></p>
+
+    <!-- Lignes de prêt -->
+    <div class="sub-title" style="margin-top:0;">Lignes de pr&#234;t</div>
+    <div id="cfLignes"></div>
+    <button class="btn secondary" id="cfAddLigneBtn" onclick="addLigne()" style="margin-bottom:16px;">+ Ajouter une ligne de pr&#234;t</button>
+
+    <p id="cfError" style="color:var(--warn);font-size:.82rem;min-height:1.2em;margin:4px 0;"></p>
     <div style="display:flex;gap:10px;">
       <button class="btn secondary" onclick="closeCreditForm()">Annuler</button>
       <button class="btn primary" onclick="saveCreditForm()">Enregistrer</button>
