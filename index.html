@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Nestimate</title>
+  <meta name="theme-color" content="#01696f"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="Nestimate"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icons/icon.svg"/>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 11.5 12 5l8 6.5v7a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Nestimate</h1>
+        <p>Budget immobilier, sans jargon</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="saveInd" style="font-size:.75rem;color:var(--muted);opacity:0;transition:opacity .4s;">&#10003; Sauvegarde</span>
+      <div class="profile-wrap" id="profileWrap">
+        <button class="profile-btn" id="profileBtn" onclick="toggleProfileDropdown()" title="Mon profil">
+          <span class="prof-btn-name" id="profileBtnName">Mon profil</span>
+          <span class="prof-chevron">&#9662;</span>
+        </button>
+        <div class="profile-dropdown" id="profileDropdown"></div>
+      </div>
+      <button class="theme-btn" id="themeBtn">&#9680;</button>
+    </div>
+  </header>
+
+  <!-- Mode tabs -->
+  <div class="mode-tabs" role="tablist">
+    <button class="mode-tab active" id="tabBudget" onclick="setMode('budget')">&#127968; Mon budget d'achat</button>
+    <button class="mode-tab" id="tabRvb" onclick="setMode('rvb')">&#9878; Louer ou acheter ?</button>
+  </div>
+
+  <!-- ═══════════ MODE BUDGET ═══════════ -->
+  <div class="mode-section active" id="modeBudget">
+
+    <nav class="phase-nav" id="phaseNav">
+      <button class="phase-btn active" id="ph0" onclick="goTo(0)">
+        <span class="ph-num">Phase 1</span>
+        <span class="ph-label">Mon profil</span>
+        <span class="ph-sub" id="ph0sub">Revenus, charges, financement</span>
+        <span class="ph-dots" id="ph0dots">
+          <span class="ph-dot" id="pd0"></span>
+          <span class="ph-dot" id="pd1"></span>
+          <span class="ph-dot" id="pd2"></span>
+          <span class="ph-dot" id="pd3"></span>
+        </span>
+      </button>
+      <button class="phase-btn" id="ph1" onclick="goTo(4)">
+        <span class="ph-num">Phase 2</span>
+        <span class="ph-label">Simulation</span>
+        <span class="ph-sub" id="ph1sub">Tester un bien &amp; bilan</span>
+      </button>
+    </nav>
+
+    <!-- PAGE 0 : Revenus -->
+    <div class="page active" id="page-0"><div class="card">
+      <div class="page-head">
+        <span class="eyebrow">Étape 1 / 4</span>
+        <h2>Mes revenus</h2>
+        <p>Renseignez vos revenus nets mensuels pour calculer votre capacité d'emprunt.</p>
+      </div>
+      <div class="toggle-row">
+        <button class="chip active" id="soloBtn">Emprunteur seul</button>
+        <button class="chip" id="coBtn">Ajouter un co-emprunteur</button>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="salary1">Salaire net mensuel — emprunteur 1</label>
+          <input id="salary1" type="number" value="0" min="0" step="50" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="months1">Versé sur combien de mois ?</label>
+          <select id="months1">
+            <option value="12" selected>12 mois</option>
+            <option value="13">13 mois</option>
+            <option value="14">14 mois</option>
+          </select>
+        </div>
+        <div class="field hidden co-only">
+          <label for="salary2">Salaire net mensuel — co-emprunteur</label>
+          <input id="salary2" type="number" value="0" min="0" step="50" inputmode="decimal">
+        </div>
+        <div class="field hidden co-only">
+          <label for="months2">Co-emprunteur — sur combien de mois ?</label>
+          <select id="months2">
+            <option value="12" selected>12 mois</option>
+            <option value="13">13 mois</option>
+            <option value="14">14 mois</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="rentIncome">Revenus locatifs mensuels (CC)</label>
+          <input id="rentIncome" type="number" value="0" min="0" step="50" inputmode="decimal">
+          <div class="hint">Loyer charges comprises.</div>
+        </div>
+        <div class="field">
+          <label for="rentPct">% retenu sur le locatif</label>
+          <input id="rentPct" type="number" value="0" min="0" max="100" step="1" inputmode="decimal">
+          <div class="hint">90% par défaut.</div>
+        </div>
+        <div class="field">
+          <label for="otherIncome">Autres revenus retenus (mensuels)</label>
+          <input id="otherIncome" type="number" value="0" min="0" step="50" inputmode="decimal">
+          <div class="hint">Freelance, pension reçue…</div>
+        </div>
+      </div>
+      <div class="nav-bar">
+        <button class="btn ghost" disabled>&#8592; Précédent</button>
+        <button class="btn primary" onclick="goTo(1)">Suivant &#8594;</button>
+      </div>
+    </div></div>
+
+    <!-- PAGE 1 : Charges -->
+    <div class="page" id="page-1"><div class="card">
+      <div class="page-head">
+        <span class="eyebrow">Étape 2 / 4</span>
+        <h2>Mes charges</h2>
+        <p>Deux types de charges aux rôles très différents.</p>
+      </div>
+      <div class="sub-title">Charges dans le taux d'endettement <span class="badge badge-debt">Réduit la mensualité</span></div>
+      <div class="explain-box">Crédits en cours et pensions alimentaires versées.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="currentCredits">Crédits en cours (mensualités cumulées)</label>
+          <input id="currentCredits" type="number" value="0" min="0" step="10" inputmode="decimal">
+          <div class="hint">Auto, conso, LOA, revolving…</div>
+        </div>
+        <div class="field">
+          <label for="alimonyPaid">Pensions alimentaires versées</label>
+          <input id="alimonyPaid" type="number" value="0" min="0" step="10" inputmode="decimal">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="sub-title">Autres charges mensuelles <span class="badge badge-info">Reste à vivre uniquement</span></div>
+      <div class="explain-box">Non prises en compte dans le taux d'endettement. Servent à évaluer votre vrai reste à vivre.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="rentPaid">Loyer actuel</label>
+          <input id="rentPaid" type="number" value="0" min="0" step="10" inputmode="decimal">
+          <div class="hint">Disparaît après l'achat.</div>
+        </div>
+        <div class="field">
+          <label for="otherExpenses">Autres charges courantes</label>
+          <input id="otherExpenses" type="number" value="0" min="0" step="10" inputmode="decimal">
+          <div class="hint">Abonnements, transport, garde…</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="sub-title">Composition du foyer <span class="badge badge-info">Reste à vivre</span></div>
+      <div class="explain-box">Permet de calculer automatiquement votre plancher de reste à vivre (800€/adulte · 400€/enfant).</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="nbAdults">Adultes dans le foyer</label>
+          <input id="nbAdults" type="number" value="1" min="1" max="8" step="1" inputmode="decimal">
+          <div class="hint">800€ de plancher par adulte.</div>
+        </div>
+        <div class="field">
+          <label for="nbChildren">Enfants à charge</label>
+          <input id="nbChildren" type="number" value="0" min="0" max="10" step="1" inputmode="decimal">
+          <div class="hint">400€ de plancher par enfant.</div>
+        </div>
+      </div>
+      <div class="nav-bar">
+        <button class="btn secondary" onclick="goTo(0)">&#8592; Précédent</button>
+        <button class="btn primary" onclick="goTo(2)">Suivant &#8594;</button>
+      </div>
+    </div></div>
+
+    <!-- PAGE 2 : Financement -->
+    <div class="page" id="page-2"><div class="card">
+      <div class="page-head">
+        <span class="eyebrow">Étape 3 / 4</span>
+        <h2>Mon financement</h2>
+        <p>Assurance, durée, taux et frais annexes.</p>
+      </div>
+      <div class="sub-title">Paramètres du prêt</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="apport">Apport personnel</label>
+          <input id="apport" type="number" value="0" min="0" step="1000" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="rate">Taux nominal du prêt (%)</label>
+          <input id="rate" type="number" value="0" min="0" step="0.01" inputmode="decimal">
+          <div class="rate-hint-box">
+            <div class="rh-title">
+              <span>Taux moyens du marché en France</span>
+              <span class="rh-tag static" id="rateTag">Chargement…</span>
+            </div>
+            <div class="rate-grid">
+              <div class="rate-pill"><div class="rp-dur">15 ans</div><div class="rp-val" id="rate15">—</div></div>
+              <div class="rate-pill"><div class="rp-dur">20 ans</div><div class="rp-val" id="rate20">—</div></div>
+              <div class="rate-pill best"><div class="rp-dur">25 ans</div><div class="rp-val" id="rate25">—</div></div>
+            </div>
+            <div class="rh-source" id="rateSource" style="margin-top:7px;"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="duration">Durée du prêt</label>
+          <select id="duration">
+            <option value="15">15 ans</option>
+            <option value="20" selected>20 ans</option>
+            <option value="25">25 ans</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="debtRatio">Taux d'endettement cible (%) <button class="help-btn" onclick="showTip('hcsf')">?</button></label>
+          <input id="debtRatio" type="number" value="35" min="1" max="60" step="1" inputmode="decimal">
+          <div class="hint">Plafond HCSF 35%.</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="sub-title">Assurance emprunteur <span class="badge badge-debt">Intégrée dans le taux d'endettement</span></div>
+      <div class="explain-box">Quotité 1 + Quotité 2 &ge; 100%.<br>Coût = capital &times; (taux1&times;quotité1 + taux2&times;quotité2) / 12</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="insuranceRate">Taux assurance emprunteur 1 (%/an) <button class="help-btn" onclick="showTip('assurance')">?</button></label>
+          <input id="insuranceRate" type="number" value="0" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="quotite1">Quotité emprunteur 1 (%) <button class="help-btn" onclick="showTip('quotite')">?</button></label>
+          <input id="quotite1" type="number" value="0" min="0" max="100" step="10" inputmode="decimal">
+        </div>
+        <div class="field hidden co-only">
+          <label for="insuranceRate2">Taux assurance co-emprunteur (%/an)</label>
+          <input id="insuranceRate2" type="number" value="0" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="field hidden co-only">
+          <label for="quotite2">Quotité co-emprunteur (%)</label>
+          <input id="quotite2" type="number" value="0" min="0" max="100" step="10" inputmode="decimal">
+        </div>
+      </div>
+      <div class="explain-box" id="quotiteWarn" style="display:none;border-color:rgba(150,66,25,.28);background:var(--warn-soft);"></div>
+      <div class="divider"></div>
+      <div class="sub-title">Frais annexes <span class="badge badge-fees">Déduits de l'apport</span></div>
+      <div class="explain-box">Payés depuis l'apport. Prix du bien visable = enveloppe &minus; frais annexes.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="notaryRate">Frais de notaire (%)</label>
+          <input id="notaryRate" type="number" value="0" min="0" step="0.1" inputmode="decimal">
+          <div class="hint">7-8% ancien, 2-3% neuf.</div>
+        </div>
+        <div class="field">
+          <label for="guaranteeRate">Frais de garantie bancaire (%) <button class="help-btn" onclick="showTip('garantie')">?</button></label>
+          <input id="guaranteeRate" type="number" value="0" min="0" step="0.1" inputmode="decimal">
+          <div class="hint">~1% du capital emprunté.</div>
+        </div>
+        <div class="field">
+          <label for="bankFees">Frais de dossier banque</label>
+          <input id="bankFees" type="number" value="0" min="0" step="100" inputmode="decimal">
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Frais de courtier</label>
+          <label class="toggle-check" for="useBroker">
+            <input type="checkbox" id="useBroker">
+            <div><strong>Je passe par un courtier</strong><br><span>Frais estimés automatiquement.</span></div>
+          </label>
+          <div id="brokerFeedback" style="display:none;margin-top:10px;background:var(--primary-soft);border:1.5px solid rgba(1,105,111,.2);border-radius:10px;padding:10px 14px;font-size:.84rem;">
+            <div style="font-weight:700;color:var(--primary);margin-bottom:2px;">✓ Courtier activé</div>
+            <div style="color:var(--muted);">Frais estimés : <strong class="mono" id="brokerFeedbackAmt">—</strong></div>
+          </div>
+          <div id="brokerWrap" style="display:none;">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:140px;">
+                <label for="brokerPct" style="font-size:.82rem;">Taux honoraires (%)</label>
+                <input id="brokerPct" type="number" value="0" min="0" step="0.1" style="margin-top:4px;" inputmode="decimal">
+              </div>
+              <div style="flex:1;min-width:140px;">
+                <label style="font-size:.82rem;">Frais estimés</label>
+                <div style="min-height:46px;border-radius:11px;border:1px solid var(--border);background:var(--primary-soft);color:var(--primary);padding:0 14px;display:flex;align-items:center;font-weight:700;margin-top:4px;" id="brokerDisp">—</div>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="brokerFees" value="0">
+        </div>
+      </div>
+      <div class="nav-bar">
+        <button class="btn secondary" onclick="goTo(1)">&#8592; Précédent</button>
+        <button class="btn primary" onclick="goTo(3)">Voir mon budget &#8594;</button>
+      </div>
+    </div></div>
+
+    <!-- PAGE 3 : Budget maximum -->
+    <div class="page" id="page-3"><div class="card">
+      <div class="page-head">
+        <span class="eyebrow">Étape 4 / 4</span>
+        <h2>Mon budget maximum</h2>
+        <p>Calculé depuis votre profil. Assurance et frais annexes inclus.</p>
+      </div>
+
+      <!-- Calculateur inversé -->
+      <div class="inv-calc">
+        <div class="inv-header">🔄 Simuler depuis une mensualité cible <span style="font-weight:400;">— optionnel</span></div>
+        <div class="inv-fields">
+          <div class="field" style="margin:0;">
+            <label for="invTarget" style="font-size:.82rem;">Mensualité max souhaitée</label>
+            <input id="invTarget" type="number" min="0" step="50" placeholder="ex : 1 100" inputmode="decimal" style="margin-top:4px;">
+          </div>
+          <div class="inv-result-box">
+            <div class="inv-result-label">Bien visable</div>
+            <div class="inv-result-val mono" id="invPropMax">—</div>
+            <div class="inv-result-delta" id="invPropDelta"></div>
+          </div>
+          <div class="inv-result-box">
+            <div class="inv-result-label">Capital empruntable</div>
+            <div class="inv-result-val mono" id="invBorrow">—</div>
+            <div class="inv-result-delta" id="invBorrowDelta"></div>
+          </div>
+        </div>
+        <div class="inv-note" id="invNote" style="display:none;"></div>
+      </div>
+
+      <div class="results r3">
+        <div class="result hl-green"><div class="rlabel">Prix maximum du bien visable</div><div class="rvalue mono" id="propMax">—</div></div>
+        <div class="result hl-blue"><div class="rlabel">Enveloppe maximum totale</div><div class="rvalue mono" id="totalEnv">—</div></div>
+        <div class="result"><div class="rlabel">Montant maximum empruntable</div><div class="rvalue mono" id="borrowable">—</div></div>
+      </div>
+      <div class="monthly-box">
+        <div class="mrow"><span>Mensualité prêt (capital + intérêts)</span><strong class="mono" id="b4LoanM">—</strong></div>
+        <div class="mrow"><span>Assurance emprunteur mensuelle</span><strong class="mono" id="b4InsM">—</strong></div>
+        <div class="mrow total"><span>Mensualité totale disponible</span><strong class="mono" id="b4TotalM">—</strong></div>
+      </div>
+
+      <div class="taeg-card" id="taegCard">
+        <div class="taeg-main">
+          <div class="taeg-label">TAEG <button class="help-btn" onclick="showTip('taeg')" style="vertical-align:middle;">?</button></div>
+          <div class="taeg-value mono" id="taegVal">—</div>
+          <div class="taeg-note">Coût total annualisé du crédit, assurance et frais inclus</div>
+        </div>
+        <div class="taeg-breakdown">
+          <div class="taeg-pill"><div class="tp-label">Taux nominal</div><div class="tp-val mono" id="taegNominal">—</div></div>
+          <div class="taeg-pill"><div class="tp-label">Assurance</div><div class="tp-val mono" id="taegIns">—</div></div>
+          <div class="taeg-pill"><div class="tp-label">Frais</div><div class="tp-val mono" id="taegFees">—</div></div>
+        </div>
+      </div>
+
+      <div class="sub-title" style="margin-top:18px;">Détail des frais annexes <button class="help-btn" onclick="openPopup()">?</button></div>
+      <div class="fees-grid">
+        <div class="fee-line"><span>Frais de notaire</span><strong class="mono" id="fNotary">—</strong></div>
+        <div class="fee-line"><span>Frais de garantie</span><strong class="mono" id="fGuarantee">—</strong></div>
+        <div class="fee-line"><span>Frais de dossier</span><strong class="mono" id="fDossier">—</strong></div>
+        <div class="fee-line"><span>Frais de courtier</span><strong class="mono" id="fBroker">—</strong></div>
+      </div>
+      <div class="fee-line" style="margin-top:8px;font-weight:700;"><span>Total frais annexes</span><strong class="mono" id="fTotal">—</strong></div>
+      <div class="status neutral" id="b4Status">
+        <strong id="b4Head">Complétez les étapes précédentes.</strong>
+        <div id="b4Cmt"></div>
+      </div>
+
+      <div class="nav-bar">
+        <button class="btn secondary" onclick="goTo(2)">&#8592; Modifier</button>
+        <button class="btn primary" onclick="goTo(4)">Tester un bien &#8594;</button>
+      </div>
+    </div></div>
+
+    <!-- PAGE 4 : Tester un bien -->
+    <div class="page" id="page-4"><div class="card">
+      <div class="page-head">
+        <span class="eyebrow">Étape 5 / 6</span>
+        <h2>Tester un bien précis</h2>
+        <p>Vérifiez si un bien entre dans votre enveloppe.</p>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="propPrice">Prix du bien</label>
+          <input id="propPrice" type="number" value="0" min="0" step="1000" inputmode="decimal">
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Type de prix affiché</label>
+          <div class="hav-toggle">
+            <button class="hav-btn active" id="havBtn" onclick="setHav('hav')">
+              🏷 HAV — Honoraires vendeur (inclus dans le prix)
+            </button>
+            <button class="hav-btn" id="hacBtn" onclick="setHav('hac')">
+              ➕ HAC — Honoraires acheteur (en sus)
+            </button>
+          </div>
+          <div class="hav-note" id="havNote">
+            ℹ️ <strong>HAV :</strong> Les honoraires d'agence sont inclus dans le prix affiché. Les frais de notaire sont calculés sur le prix total.
+          </div>
+        </div>
+        <div class="field" id="agencyField" style="display:none;">
+          <label for="agencyFees">Honoraires d'agence</label>
+          <input id="agencyFees" type="number" value="0" min="0" step="500" inputmode="decimal">
+          <div class="hint" id="agencyHint">Déduits du prix pour le calcul des frais de notaire.</div>
+        </div>
+        <div class="field">
+          <label for="works">Travaux estimés</label>
+          <input id="works" type="number" value="0" min="0" step="500" inputmode="decimal">
+        </div>
+      </div>
+
+      <!-- Curseur apport simulation -->
+      <div class="sim-wrap">
+        <div class="sim-header">
+          <div class="sim-header-left">
+            <span class="sim-label">Apport</span>
+            <span class="sim-value mono" id="simApportVal">—</span>
+            <span class="sim-mod-badge" id="simModBadge">⚠ Modifié</span>
+          </div>
+          <button class="sim-reset-btn" id="simResetBtn" onclick="resetSimApport()">↺ Profil</button>
+        </div>
+        <input type="range" class="sim-slider" id="simApport" min="0" max="200000" step="1000" value="0" oninput="onSimApport()">
+        <div class="sim-range-labels"><span>0 €</span><span id="simApportMax">200 000 €</span></div>
+        <div class="sim-delta" id="simDelta">
+          <div class="sim-delta-row">
+            <span>Mensualité totale</span>
+            <span id="simDeltaMens" style="display:flex;align-items:center;gap:4px;font-weight:600;">—</span>
+          </div>
+          <div class="sim-delta-row" id="simDeltaBadgeRow" style="display:none;">
+            <span>Dossier</span>
+            <span id="simDeltaBadge" style="font-weight:600;">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Montage financier -->
+      <div class="monthly-box" style="margin-top:10px;">
+        <div class="mrow" style="font-weight:700;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">
+          <span>Montage financier</span>
+        </div>
+        <div class="mrow"><span>Apport personnel</span><strong class="mono" id="projApport">—</strong></div>
+        <div class="mrow"><span>Montant du prêt</span><strong class="mono" id="projFinanced">—</strong></div>
+        <div class="mrow total"><span>Coût total projet</span><strong class="mono" id="projCostTotal">—</strong></div>
+      </div>
+
+      <!-- Détail coût total -->
+      <details class="fees-detail" id="projDetail" style="margin-top:8px;">
+        <summary class="fees-detail-summary">📋 Détail du coût total projet</summary>
+        <div class="fees-detail-body">
+          <div class="fee-line"><span>Prix du bien</span><strong class="mono" id="projPrixBien">—</strong></div>
+          <div class="fee-line" id="projAgencyLine"><span id="projAgencyLabel">+ Honoraires d'agence (HAC)</span><strong class="mono" id="projAgency">—</strong></div>
+          <div class="fee-line"><span>+ Travaux estimés</span><strong class="mono" id="projWorks">—</strong></div>
+          <div class="fee-line" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);">
+            <span>+ Frais de notaire</span><strong class="mono" id="projNotary">—</strong>
+          </div>
+          <div class="fee-line"><span>+ Frais de garantie</span><strong class="mono" id="projGuarantee">—</strong></div>
+          <div class="fee-line"><span>+ Frais de dossier</span><strong class="mono" id="projBankFees">—</strong></div>
+          <div class="fee-line"><span>+ Frais de courtier</span><strong class="mono" id="projBrokerFees">—</strong></div>
+          <div class="fee-line" style="font-weight:700;margin-top:8px;padding-top:8px;border-top:2px solid var(--border);">
+            <span>= Coût total projet</span><strong class="mono" id="projCostDetail">—</strong>
+          </div>
+        </div>
+      </details>
+
+      <!-- Mensualités -->
+      <div class="monthly-box">
+        <div class="mrow"><span>Mensualité prêt</span><strong class="mono" id="projLoanM">—</strong></div>
+        <div class="mrow"><span>Assurance emprunteur</span><strong class="mono" id="projInsM">—</strong></div>
+        <div class="mrow total"><span>Mensualité totale</span><strong class="mono" id="projTotalM">—</strong></div>
+      </div>
+
+      <!-- Taux d'endettement -->
+      <div class="eval-card" id="drCard" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">Taux d'endettement calculé</div>
+            <div style="font-size:2rem;font-weight:800;letter-spacing:-0.05em;" class="mono" id="drVal">—</div>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div class="eval-bar-wrap"><div class="eval-bar" id="drBar"></div></div>
+            <div style="font-size:.82rem;" id="drCmt">—</div>
+          </div>
+        </div>
+        <div class="eval-legend">
+          <span>&#9632; &lt;35% Confortable (HCSF)</span>
+          <span>&#9632; 35-38% Limite</span>
+          <span>&#9632; &gt;38% Hors norme</span>
+        </div>
+      </div>
+
+      <!-- Reste à vivre -->
+      <div class="eval-card" id="ravCard" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">Reste à vivre mensuel après achat <button class="help-btn" onclick="showTip('rav')">?</button></div>
+            <div style="font-size:2rem;font-weight:800;letter-spacing:-0.05em;" class="mono" id="ravVal">—</div>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div class="eval-bar-wrap"><div class="eval-bar" id="ravBar"></div></div>
+            <div style="font-size:.82rem;" id="ravCmt">—</div>
+          </div>
+        </div>
+        <div class="eval-legend">
+          <span id="ravLeg1">&#9632; &lt;800€ Insuffisant</span>
+          <span id="ravLeg2">&#9632; 800-1200€ Limite</span>
+          <span id="ravLeg3">&#9632; 1200-1800€ Correct</span>
+          <span id="ravLeg4">&#9632; &gt;1800€ Confortable</span>
+        </div>
+        <div id="ravFloorHint" style="margin-top:10px;font-size:.78rem;color:var(--muted);padding:8px 10px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);">
+          &#9432; Plancher calculé : 1 adulte × 800€ = <strong>800€</strong>
+        </div>
+      </div>
+
+      <!-- Badge dossier -->
+      <div style="margin:12px 0 4px;">
+        <div class="dossier-badge" id="dossierBadge">
+          <div class="badge-icon" id="dossierIcon">—</div>
+          <div class="badge-body">
+            <div class="badge-title" id="dossierTitle">—</div>
+            <div class="badge-sub" id="dossierSub">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="status neutral" id="projStatus">
+        <strong id="projHead">Renseignez un prix pour tester ce bien.</strong>
+        <div id="projCmt"></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="sub-title">📈 Tableau d'amortissement — bien testé</div>
+      <div class="amort-stats">
+        <div class="amort-stat">
+          <div class="as-label">Capital emprunté</div>
+          <div class="as-value mono" id="amortCapital2">—</div>
+        </div>
+        <div class="amort-stat warn">
+          <div class="as-label">Total intérêts payés</div>
+          <div class="as-value mono" id="amortInterest2">—</div>
+        </div>
+        <div class="amort-stat ok">
+          <div class="as-label">Coût total du crédit</div>
+          <div class="as-value mono" id="amortTotal2">—</div>
+        </div>
+      </div>
+      <button class="amort-toggle" id="amortToggleBtn2" onclick="toggleAmort2()">
+        <span id="amortToggleLabel2">📋 Afficher le tableau détaillé (mois par mois)</span>
+        <span class="amort-arrow">▼</span>
+      </button>
+      <div class="amort-section" id="amortSection2">
+        <div class="amort-view-toggle">
+          <button class="amort-chip active" id="amortChipM2" onclick="setAmortView2('month')">Mensuel</button>
+          <button class="amort-chip" id="amortChipY2" onclick="setAmortView2('year')">Annuel</button>
+        </div>
+        <div class="amort-chart-wrap">
+          <svg id="amortChart2" width="100%" height="120" viewBox="0 0 600 120" style="display:block;min-width:280px;border-radius:10px;overflow:hidden;"></svg>
+          <div style="display:flex;gap:16px;margin-top:6px;font-size:.75rem;color:var(--muted);">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--success);margin-right:4px;"></span>Capital remboursé</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn);margin-right:4px;"></span>Intérêts</span>
+          </div>
+        </div>
+        <div class="amort-table-wrap">
+          <table class="amort-table">
+            <thead id="amortHead2"></thead>
+            <tbody id="amortBody2"></tbody>
+            <tfoot id="amortFoot2"></tfoot>
+          </table>
+        </div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:8px;text-align:right;">
+          * Hors assurance emprunteur. Calcul basé sur un taux fixe.
+        </div>
+      </div>
+
+      <div class="nav-bar">
+        <button class="btn secondary" onclick="goTo(3)">&#8592; Mon budget</button>
+        <button class="btn primary" onclick="goTo(5)">Comparer des biens &#8594;</button>
+      </div>
+    </div></div>
+
+    <!-- PAGE 5 : Comparer des biens -->
+    <div class="page" id="page-5"><div class="card">
+      <div class="page-head">
+        <span class="eyebrow">Étape 6 / 6</span>
+        <h2>Comparer des biens</h2>
+        <p>Renseignez jusqu'à 3 biens pour les comparer côte à côte avec votre profil.</p>
+      </div>
+
+      <!-- Inputs : 3 cartes de bien -->
+      <div class="comp-inputs">
+        <div class="comp-input-card">
+          <div class="comp-card-head">
+            <span class="comp-card-letter">A</span>
+            <input class="comp-name-input" id="compName0" type="text" placeholder="Nom (optionnel)" maxlength="30">
+          </div>
+          <div class="comp-fields">
+            <div class="field">
+              <label for="compPrice0">Prix du bien</label>
+              <input id="compPrice0" type="number" min="0" step="1000" inputmode="decimal" placeholder="Ex : 250 000">
+            </div>
+            <div class="field">
+              <label for="compWorks0">Travaux</label>
+              <input id="compWorks0" type="number" min="0" step="500" inputmode="decimal" value="0">
+            </div>
+            <div class="field">
+              <label for="compDur0">Durée</label>
+              <select id="compDur0">
+                <option value="15">15 ans</option>
+                <option value="20" selected>20 ans</option>
+                <option value="25">25 ans</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="comp-input-card">
+          <div class="comp-card-head">
+            <span class="comp-card-letter" style="background:var(--warn);">B</span>
+            <input class="comp-name-input" id="compName1" type="text" placeholder="Nom (optionnel)" maxlength="30">
+          </div>
+          <div class="comp-fields">
+            <div class="field">
+              <label for="compPrice1">Prix du bien</label>
+              <input id="compPrice1" type="number" min="0" step="1000" inputmode="decimal" placeholder="Ex : 280 000">
+            </div>
+            <div class="field">
+              <label for="compWorks1">Travaux</label>
+              <input id="compWorks1" type="number" min="0" step="500" inputmode="decimal" value="0">
+            </div>
+            <div class="field">
+              <label for="compDur1">Durée</label>
+              <select id="compDur1">
+                <option value="15">15 ans</option>
+                <option value="20" selected>20 ans</option>
+                <option value="25">25 ans</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="comp-input-card">
+          <div class="comp-card-head">
+            <span class="comp-card-letter" style="background:#7a5c9a;">C</span>
+            <input class="comp-name-input" id="compName2" type="text" placeholder="Nom (optionnel)" maxlength="30">
+          </div>
+          <div class="comp-fields">
+            <div class="field">
+              <label for="compPrice2">Prix du bien</label>
+              <input id="compPrice2" type="number" min="0" step="1000" inputmode="decimal" placeholder="Ex : 215 000">
+            </div>
+            <div class="field">
+              <label for="compWorks2">Travaux</label>
+              <input id="compWorks2" type="number" min="0" step="500" inputmode="decimal" value="0">
+            </div>
+            <div class="field">
+              <label for="compDur2">Durée</label>
+              <select id="compDur2">
+                <option value="15">15 ans</option>
+                <option value="20" selected>20 ans</option>
+                <option value="25">25 ans</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Résultats -->
+      <div id="compEmpty" class="status neutral">
+        <strong>Renseignez au moins un prix pour voir la comparaison.</strong>
+        <div>Bien A est pré-rempli depuis votre étape 5 si vous y avez entré un prix.</div>
+      </div>
+      <div id="compResults" style="display:none;"></div>
+
+      <div class="nav-bar">
+        <button class="btn secondary" onclick="goTo(4)">&#8592; Tester un bien</button>
+        <button class="btn primary" onclick="goTo(6)">Voir mon bilan &#8594;</button>
+      </div>
+    </div></div>
+
+    <div class="page" id="page-6"><div class="card">
+      <div class="page-head">
+        <span class="eyebrow">🎯 Bilan complet</span>
+        <h2>Votre bilan immobilier</h2>
+        <p>Toutes vos simulations rassemblées en un seul endroit.</p>
+      </div>
+
+      <!-- Capacité d'emprunt -->
+      <div class="sub-title">🏠 Capacité d'emprunt</div>
+      <div class="results r3">
+        <div class="result hl-green"><div class="rlabel">Prix du bien visable</div><div class="rvalue mono" id="resPropMax">—</div></div>
+        <div class="result hl-blue"><div class="rlabel">Enveloppe projet totale</div><div class="rvalue mono" id="resTotalEnv">—</div></div>
+        <div class="result"><div class="rlabel">Montant empruntable</div><div class="rvalue mono" id="resBorrow">—</div></div>
+      </div>
+      <div class="monthly-box" style="margin-top:14px;">
+        <div class="mrow"><span>Mensualité prêt (capital + intérêts)</span><strong class="mono" id="resLoanM">—</strong></div>
+        <div class="mrow"><span>Assurance emprunteur mensuelle</span><strong class="mono" id="resInsM">—</strong></div>
+        <div class="mrow total"><span>Mensualité totale disponible</span><strong class="mono" id="resTotalM">—</strong></div>
+      </div>
+
+      <!-- TAEG -->
+      <div class="taeg-card" style="margin-top:12px;">
+        <div class="taeg-main">
+          <div class="taeg-label">TAEG <button class="help-btn" onclick="showTip('taeg')" style="vertical-align:middle;">?</button></div>
+          <div class="taeg-value mono" id="taegVal2">—</div>
+          <div class="taeg-note">Coût total annualisé, assurance et frais inclus</div>
+        </div>
+        <div class="taeg-breakdown">
+          <div class="taeg-pill"><div class="tp-label">Taux nominal</div><div class="tp-val mono" id="taegNominal2">—</div></div>
+          <div class="taeg-pill"><div class="tp-label">Assurance</div><div class="tp-val mono" id="taegIns2">—</div></div>
+          <div class="taeg-pill"><div class="tp-label">Frais</div><div class="tp-val mono" id="taegFees2">—</div></div>
+        </div>
+      </div>
+
+      <!-- Frais annexes -->
+      <div class="sub-title" style="margin-top:18px;">Frais annexes <button class="help-btn" onclick="openPopup()">?</button></div>
+      <div class="fees-grid">
+        <div class="fee-line"><span>Frais de notaire</span><strong class="mono" id="resFNotary">—</strong></div>
+        <div class="fee-line"><span>Frais de garantie</span><strong class="mono" id="resFGuarantee">—</strong></div>
+        <div class="fee-line"><span>Frais de dossier</span><strong class="mono" id="resFDossier">—</strong></div>
+        <div class="fee-line"><span>Frais de courtier</span><strong class="mono" id="resFBroker">—</strong></div>
+      </div>
+      <div class="fee-line" style="margin-top:8px;font-weight:700;"><span>Total frais annexes</span><strong class="mono" id="resFTotal">—</strong></div>
+
+      <div class="divider"></div>
+
+      <!-- Bien testé (conditionnel) -->
+      <div id="resProjectSection" style="display:none;">
+        <div class="sub-title">🏷 Bien testé — <span id="resProjPriceLabel">—</span></div>
+        <div class="results r2" style="margin-bottom:12px;">
+          <div class="result"><div class="rlabel">Coût total projet</div><div class="rvalue mono" id="resProjCost">—</div></div>
+          <div class="result"><div class="rlabel">Montant financé</div><div class="rvalue mono" id="resProjFin">—</div></div>
+          <div class="result hl-green"><div class="rlabel">Reste à vivre</div><div class="rvalue mono" id="resProjRav">—</div></div>
+          <div class="result"><div class="rlabel">Taux d'endettement</div><div class="rvalue mono" id="resProjDr">—</div></div>
+        </div>
+        <div class="mrow" style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;">
+          <span>Mensualité totale</span>
+          <strong class="mono" id="resProjLoanM">—</strong>
+        </div>
+        <div style="margin:8px 0;">
+          <div class="dossier-badge" id="dossierBadge2">
+            <div class="badge-icon" id="dossierIcon2">—</div>
+            <div class="badge-body">
+              <div class="badge-title" id="dossierTitle2">—</div>
+              <div class="badge-sub" id="dossierSub2">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="status neutral" id="resProjStatus">
+          <strong id="resProjHead">—</strong>
+          <div id="resProjCmt"></div>
+        </div>
+        <div class="divider"></div>
+      </div>
+
+      <div class="nav-bar" style="flex-wrap:wrap;gap:10px;">
+        <button class="btn secondary" onclick="goTo(5)">&#8592; Comparer</button>
+        <button class="btn primary" id="copyBilanBtn" onclick="copyBilan()">📋 Copier le résumé</button>
+        <button class="btn ghost" onclick="resetAll()">&#8635; Recommencer</button>
+      </div>
+    </div></div>
+
+  </div><!-- end modeBudget -->
+
+  <!-- ═══════════ MODE RvB ═══════════ -->
+  <div class="mode-section" id="modeRvb">
+    <div class="rvb-banner">
+      <div class="rvb-banner-icon">&#9878;</div>
+      <div>
+        <h2>Louer ou acheter ?</h2>
+        <p>Simulez le bilan patrimonial sur une durée de détention et trouvez le point d'équilibre où l'achat devient plus rentable que la location + épargne.</p>
+        <div class="rvb-sync-badge">&#10003; Utilise automatiquement votre profil de l'onglet Budget</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="explain-box">Le calcul compare votre <strong>patrimoine net</strong> après N ans. L'achat constitue un actif mais immobilise l'épargne et génère des frais. La location préserve votre apport investi.</div>
+      <div class="sub-title">Paramètres de la simulation</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="holdYears">Durée de détention prévue</label>
+          <select id="holdYears">
+            <option value="3">3 ans</option>
+            <option value="5">5 ans</option>
+            <option value="7">7 ans</option>
+            <option value="10" selected>10 ans</option>
+            <option value="15">15 ans</option>
+            <option value="20">20 ans</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="appRate">Appréciation annuelle du bien (%)</label>
+          <input id="appRate" type="number" value="0" min="-5" max="15" step="0.1" inputmode="decimal">
+          <div class="hint">Moyenne nationale ~1-2%/an.</div>
+        </div>
+        <div class="field">
+          <label for="rentRef">Loyer mensuel du bien équivalent</label>
+          <input id="rentRef" type="number" value="0" min="0" step="50" inputmode="decimal">
+          <div class="hint">Loyer pour un bien similaire.</div>
+        </div>
+        <div class="field">
+          <label for="rentInfl">Hausse annuelle du loyer (%)</label>
+          <input id="rentInfl" type="number" value="0" min="0" max="10" step="0.1" inputmode="decimal">
+          <div class="hint">Indice IRL ~2%/an.</div>
+        </div>
+        <div class="field">
+          <label for="ownerCosts">Charges propriétaire mensuelles</label>
+          <input id="ownerCosts" type="number" value="0" min="0" step="50" inputmode="decimal">
+          <div class="hint">Taxe foncière/12 + copro + entretien.</div>
+        </div>
+        <div class="field">
+          <label for="savRate">Rendement épargne alternative (%/an)</label>
+          <input id="savRate" type="number" value="0" min="0" max="20" step="0.1" inputmode="decimal">
+          <div class="hint">Livret A 3%, actions ~7%.</div>
+        </div>
+        <div class="field">
+          <label for="sellAgRate">Frais d'agence à la revente (%)</label>
+          <input id="sellAgRate" type="number" value="0" min="0" max="10" step="0.5" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="rvbPrice">Prix du bien testé</label>
+          <input id="rvbPrice" type="number" value="0" min="0" step="1000" inputmode="decimal">
+          <div class="hint">Laisser à 0 pour utiliser l'étape 5.</div>
+        </div>
+      </div>
+
+      <div id="rvbResults" style="display:none;margin-top:22px;">
+        <div class="sub-title">Bilan après <span id="rvbN">10</span> ans</div>
+        <div class="compare-grid">
+          <article class="scenario" id="rvbBuy">
+            <h4>&#127968; Scénario Achat</h4>
+            <div class="line"><span>Valeur à la revente</span><strong class="mono" id="rvbSell">—</strong></div>
+            <div class="line"><span>Capital remboursé (acquis)</span><strong class="mono" id="rvbRepaid">—</strong></div>
+            <div class="line"><span>Capital restant dû</span><strong class="mono" id="rvbLeft">—</strong></div>
+            <div class="line"><span>Mensualités versées</span><strong class="mono" id="rvbMpaid">—</strong></div>
+            <div class="line"><span>Charges proprio. cumulées</span><strong class="mono" id="rvbOwner">—</strong></div>
+            <div class="line"><span>Frais entrée + revente</span><strong class="mono" id="rvbFees">—</strong></div>
+            <div class="line" style="font-weight:700;"><span>Patrimoine net</span><strong class="mono" id="rvbNetBuy">—</strong></div>
+          </article>
+          <article class="scenario" id="rvbRent">
+            <h4>&#127968; Scénario Location</h4>
+            <div class="line"><span>Total loyers versés</span><strong class="mono" id="rvbRentPaid">—</strong></div>
+            <div class="line"><span>Apport investi (valeur finale)</span><strong class="mono" id="rvbApportG">—</strong></div>
+            <div class="line"><span>Économies mensuelles placées</span><strong class="mono" id="rvbSavExtra">—</strong></div>
+            <div class="line"><span>Portefeuille total</span><strong class="mono" id="rvbPortf">—</strong></div>
+            <div class="line" style="font-weight:700;"><span>Patrimoine net</span><strong class="mono" id="rvbNetRent">—</strong></div>
+          </article>
+        </div>
+        <div id="rvbVerdict" style="margin-top:14px;border-radius:13px;border:2px solid var(--border);padding:18px 20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+            <div>
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">Avantage patrimoine</div>
+              <div style="font-size:1.8rem;font-weight:800;letter-spacing:-0.05em;" class="mono" id="rvbDelta">—</div>
+            </div>
+            <div style="font-size:.9rem;font-weight:700;" id="rvbWinner">—</div>
+          </div>
+          <div id="rvbCmt" style="font-size:.86rem;color:var(--muted);margin-bottom:12px;"></div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">Point d'équilibre</div>
+          <div style="font-weight:700;font-size:1rem;" id="rvbBE">—</div>
+        </div>
+        <div style="margin-top:16px;">
+          <div style="font-size:.85rem;font-weight:700;margin-bottom:8px;">Avantage patrimoine année par année (+ = achat gagnant)</div>
+          <div style="overflow-x:auto;">
+            <svg id="rvbChart" width="100%" height="180" viewBox="0 0 600 180" style="min-width:300px;display:block;"></svg>
+          </div>
+          <div style="font-size:.76rem;color:var(--muted);margin-top:4px;">+ = achat &bull; &minus; = location</div>
+        </div>
+      </div>
+      <div class="status neutral" id="rvbEmpty">
+        <strong>Renseignez les paramètres ci-dessus.</strong>
+        <div>Un prix de bien est requis (étape 5 de l'onglet Budget ou champ ci-dessus).</div>
+      </div>
+    </div>
+  </div><!-- end modeRvb -->
+
+</div><!-- shell -->
+
+<!-- Modale saisie nom de profil -->
+<div class="popup-overlay" id="profModal" style="display:none" onclick="if(event.target===this)closeProfModal()">
+  <div class="popup-box" style="max-width:360px">
+    <button class="popup-close" onclick="closeProfModal()">&#10005;</button>
+    <h3 id="profModalTitle" style="margin-bottom:16px">Nom du profil</h3>
+    <input type="text" id="profModalInput" class="field" placeholder="Ex : Solo, Ensemble…" maxlength="40" style="width:100%">
+    <p id="profModalError" style="color:var(--warn);font-size:.82rem;margin:8px 0 0;min-height:1.2em"></p>
+    <div class="prof-actions" style="margin-top:12px">
+      <button class="prof-btn prof-btn-outline" onclick="closeProfModal()">Annuler</button>
+      <button class="prof-btn" onclick="confirmProfModal()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup frais annexes -->
+<div class="popup-overlay" id="feesPopup" onclick="if(event.target===this)closePopup()">
+  <div class="popup-box">
+    <button class="popup-close" onclick="closePopup()">&#10005;</button>
+    <h3>Comment sont calculés les frais annexes ?</h3>
+    <p style="font-size:.88rem;color:var(--muted);margin:0 0 14px;">Payés depuis l'apport. Le prix du bien visable est donc inférieur à l'enveloppe totale.</p>
+    <div class="popup-row"><span>Frais de notaire</span><strong>% du prix du bien</strong></div>
+    <div class="popup-row"><span>Frais de garantie</span><strong>% du capital emprunté</strong></div>
+    <div class="popup-row"><span>Frais de dossier</span><strong>Montant fixe</strong></div>
+    <div class="popup-row"><span>Frais de courtier</span><strong>% capital (min 1 500€, max 3 500€)</strong></div>
+    <div class="popup-formula"><strong>Prix du bien visable</strong> = (Enveloppe &minus; frais garantie &minus; frais dossier &minus; frais courtier) &divide; (1 + taux notaire)</div>
+  </div>
+</div>
+
+<!-- Tooltip générique -->
+<div class="tip-popup" id="tipPopup" onclick="if(event.target===this)closeTip()">
+  <div class="tip-box">
+    <button class="tip-close" onclick="closeTip()">&#10005;</button>
+    <h4 id="tipTitle"></h4>
+    <p id="tipBody"></p>
+    <div class="tip-formula" id="tipFormula" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Récapitulatif flottant -->
+<div id="floatBar" class="hidden">
+  <div class="fb-group">
+    <div class="fb-item">
+      <span class="fb-label">Bien testé</span>
+      <span class="fb-val mono" id="fbPrice">—</span>
+    </div>
+    <div class="fb-divider"></div>
+    <div class="fb-item">
+      <span class="fb-label">Projet total</span>
+      <span class="fb-val mono" id="fbTotal">—</span>
+    </div>
+    <div class="fb-divider"></div>
+    <div class="fb-item">
+      <span class="fb-label">Mensualité</span>
+      <span class="fb-val mono" id="fbMens">—</span>
+    </div>
+    <div class="fb-divider"></div>
+    <div class="fb-item">
+      <span class="fb-label">Endettement</span>
+      <span class="fb-val mono" id="fbDr">—</span>
+    </div>
+  </div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/amort.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
+</body>
+</html>

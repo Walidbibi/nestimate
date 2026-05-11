@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(read id *)",
+      "Bash(node --check /Users/walidbibi/nestimate/js/calc.js)",
+      "Bash(node --check /Users/walidbibi/nestimate/js/utils.js)",
+      "Bash(node --check /Users/walidbibi/nestimate/js/ui.js)",
+      "Bash(node --check /Users/walidbibi/nestimate/js/main.js)"
+    ]
+  }
+}
