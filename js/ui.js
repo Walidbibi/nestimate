@@ -1,7 +1,7 @@
 // ── Navigation ────────────────────────────────────────────────
 
 function _hideAll() {
-  ['page-home','page-profiles','page-montages','page-mensualite','modeBudget','modeRvb'].forEach(id => {
+  ['page-home','page-profiles','page-montages','page-mensualite','page-credits','modeBudget','modeRvb'].forEach(id => {
     const el = G(id); if (el) el.classList.remove('active');
   });
 }
@@ -24,6 +24,13 @@ function goTo(step) {
     currentPage = -1; currentMode = 'budget';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     renderMontageList(); return;
+  }
+  if (step === 'credits') {
+    _hideAll(); G('page-credits').classList.add('active');
+    currentPage = -1; currentMode = 'budget';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof renderCreditList === 'function') renderCreditList();
+    return;
   }
   if (step === 'mensualite') {
     _hideAll(); G('page-mensualite').classList.add('active');
@@ -118,6 +125,16 @@ function refreshHome() {
 
   const el5 = G('hcMeta5');
   if (el5) el5.textContent = profileOk ? '—' : locked;
+
+  const elCred = G('hcMetaCredits');
+  if (elCred && typeof _credits !== 'undefined') {
+    if (_credits.length === 0) {
+      elCred.textContent = 'Aucun crédit enregistré';
+    } else {
+      const totM = _credits.reduce((s, c) => s + computeCredit(c).totM, 0);
+      elCred.textContent = _credits.length + ' crédit' + (_credits.length > 1 ? 's' : '') + ' · ' + euro(totM) + '/mois';
+    }
+  }
 
   ['hcCard2','hcCard3','hcCard4','hcCard5'].forEach(id => {
     const c = G(id); if (c) c.classList.toggle('home-card-locked', !profileOk);

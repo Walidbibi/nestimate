@@ -116,6 +116,45 @@
         <span class="hc-arrow">&#8594;</span>
       </button>
 
+      <button class="home-card" id="hcCardCredits" onclick="goTo('credits')">
+        <div class="hc-icon">🏦</div>
+        <div class="hc-body">
+          <div class="hc-title">Mes crédits</div>
+          <div class="hc-desc">Suivi de vos prêts en cours</div>
+          <div class="hc-meta" id="hcMetaCredits">Aucun crédit enregistré</div>
+        </div>
+        <span class="hc-arrow">&#8594;</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ═══════════ MES CRÉDITS ═══════════ -->
+  <div id="page-credits" class="mode-section">
+    <div class="section-nav">
+      <button class="back-home-btn" onclick="goTo('home')">&#8592; Accueil</button>
+    </div>
+
+    <!-- Résumé -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="results r3">
+        <div class="result"><div class="rlabel">Crédits</div><div class="rvalue mono" id="creditSumN">—</div></div>
+        <div class="result hl-blue"><div class="rlabel">Total mensualités</div><div class="rvalue mono" id="creditSumM">—</div></div>
+        <div class="result"><div class="rlabel">Capital restant total</div><div class="rvalue mono" id="creditSumCrd">—</div></div>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div class="card">
+      <div class="page-head">
+        <h2>Mes crédits</h2>
+        <p>Suivez l'évolution de vos prêts immobiliers et à la consommation.</p>
+      </div>
+      <div id="creditList"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+        <button class="btn primary" onclick="openCreditForm(null)">+ Nouveau crédit</button>
+        <button class="btn secondary" onclick="openPdfParser()">&#128196; Importer un PDF</button>
+      </div>
     </div>
   </div>
 
@@ -1050,11 +1089,98 @@
   </div>
 </div>
 
+<!-- Popup formulaire crédit -->
+<div class="popup-overlay" id="creditFormPopup" onclick="if(event.target===this)closeCreditForm()">
+  <div class="popup-box" style="max-width:500px;">
+    <button class="popup-close" onclick="closeCreditForm()">&#10005;</button>
+    <h3 id="creditFormTitle" style="margin-bottom:16px;">Nouveau crédit</h3>
+    <div class="form-grid">
+      <div class="field" style="grid-column:1/-1;">
+        <label for="cfName">Nom du crédit</label>
+        <input id="cfName" type="text" placeholder="Ex : Prêt immo résidence principale">
+      </div>
+      <div class="field">
+        <label for="cfType">Type</label>
+        <select id="cfType" onchange="updateCreditFormSubtype()">
+          <option value="immo">Immobilier</option>
+          <option value="conso">Consommation</option>
+        </select>
+      </div>
+      <div class="field" id="cfSubtypeRow">
+        <label for="cfSubtype">Destination</label>
+        <select id="cfSubtype">
+          <option value="principale">Résidence principale</option>
+          <option value="locatif">Investissement locatif</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="cfAmount">Montant initial (&#8364;)</label>
+        <input id="cfAmount" type="number" min="0" step="1000" inputmode="decimal" placeholder="200 000">
+      </div>
+      <div class="field">
+        <label for="cfRate">Taux nominal (%)</label>
+        <input id="cfRate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="3.15">
+      </div>
+      <div class="field">
+        <label for="cfDuration">Durée (mois)</label>
+        <input id="cfDuration" type="number" min="1" step="1" inputmode="decimal" placeholder="240">
+      </div>
+      <div class="field">
+        <label for="cfStartDate">Date de départ</label>
+        <input id="cfStartDate" type="month">
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label for="cfInsurance">Assurance mensuelle (&#8364;)</label>
+        <input id="cfInsurance" type="number" min="0" step="1" inputmode="decimal" value="0">
+      </div>
+    </div>
+    <p id="cfError" style="color:var(--warn);font-size:.82rem;min-height:1.2em;margin:10px 0 4px;"></p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn secondary" onclick="closeCreditForm()">Annuler</button>
+      <button class="btn primary" onclick="saveCreditForm()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup parser PDF -->
+<div class="popup-overlay" id="pdfParserPopup" onclick="if(event.target===this)closePdfParser()">
+  <div class="popup-box" style="max-width:540px;">
+    <button class="popup-close" onclick="closePdfParser()">&#10005;</button>
+    <h3 style="margin-bottom:6px;">&#128196; Importer depuis un PDF</h3>
+    <p style="color:var(--muted);font-size:.86rem;margin:0 0 16px;">Sélectionnez le tableau d'amortissement PDF téléchargé depuis l'espace client de votre banque. Le PDF doit être un fichier texte (non scanné).</p>
+    <div class="field" style="margin-bottom:14px;">
+      <label for="pdfFile">Tableau d'amortissement (.pdf)</label>
+      <input type="file" id="pdfFile" accept=".pdf" onchange="parsePdfFile()" style="min-height:unset;padding:10px 13px;">
+    </div>
+    <div id="pdfParserStatus" style="font-size:.88rem;color:var(--muted);min-height:1.4em;margin-bottom:14px;"></div>
+    <div id="pdfParserResult" style="display:none;">
+      <div class="results r2" style="margin-bottom:12px;">
+        <div class="result hl-green"><div class="rlabel">Montant initial</div><div class="rvalue mono" id="prAmount">—</div></div>
+        <div class="result hl-blue"><div class="rlabel">Capital restant d&#251;</div><div class="rvalue mono" id="prCrd">—</div></div>
+        <div class="result"><div class="rlabel">Mensualit&#233; pr&#234;t</div><div class="rvalue mono" id="prPayment">—</div></div>
+        <div class="result"><div class="rlabel">Assurance</div><div class="rvalue mono" id="prInsurance">—</div></div>
+      </div>
+      <div class="monthly-box" style="margin-bottom:14px;">
+        <div class="mrow"><span>D&#233;j&#224; pay&#233;</span><strong class="mono" id="prPaid">—</strong></div>
+        <div class="mrow"><span>Co&#251;t total du cr&#233;dit</span><strong class="mono" id="prTotalCost">—</strong></div>
+        <div class="mrow"><span>Dur&#233;e totale</span><strong class="mono" id="prDuration">—</strong></div>
+        <div class="mrow"><span>Position actuelle</span><strong class="mono" id="prCurrentRow">—</strong></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn secondary" onclick="closePdfParser()">Annuler</button>
+        <button class="btn primary" onclick="importParsedCredit()">Importer ce cr&#233;dit &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/calc.js"></script>
 <script src="js/amort.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>
+<script src="js/credits.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
     if (location.hostname === 'localhost') {

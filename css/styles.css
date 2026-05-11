@@ -857,3 +857,37 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 .prof-btn:hover { opacity: .88; }
 .prof-btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
 .prof-btn-outline:hover { background: var(--primary-soft); opacity: 1; }
+
+/* ── Crédits ──────────────────────────────────────────────── */
+.credit-card {
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 16px; background: var(--surface); margin-bottom: 12px;
+}
+.credit-card-head {
+  display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;
+}
+.credit-name { font-weight: 700; font-size: 1rem; margin-bottom: 5px; }
+.credit-type-badge {
+  display: inline-block; font-size: .72rem; font-weight: 700;
+  padding: 2px 9px; border-radius: 999px; border: 1.5px solid;
+}
+.credit-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.credit-progress-wrap {
+  height: 6px; background: var(--border); border-radius: 999px;
+  overflow: hidden; margin-bottom: 5px;
+}
+.credit-progress-bar {
+  height: 100%; background: var(--primary); border-radius: 999px; transition: width .3s;
+}
+.credit-progress-label { font-size: .72rem; color: var(--muted); margin-bottom: 12px; }
+.credit-metrics {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.credit-metric {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 10px;
+}
+.cm-label { font-size: .7rem; color: var(--muted); margin-bottom: 2px; }
+.cm-value { font-size: .88rem; font-weight: 800; letter-spacing: -.02em; }
+.cm-warn { color: var(--warn); }
+@media (max-width: 560px) { .credit-metrics { grid-template-columns: repeat(2, 1fr); } }
