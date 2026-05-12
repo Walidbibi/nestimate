@@ -139,23 +139,16 @@ Analyse réalisée en simulant le parcours d'un primo-accédant (CDI, conjoint, 
 - Un primo-accédant croit pouvoir s'offrir bien plus que la réalité
 - **Fix :** pré-remplir avec valeurs typiques : `notaryRate: 7.5`, `guaranteeRate: 1`, `insuranceRate: 0.36`, `quotite1: 100`
 
-**7. Co-emprunteur activé mais `nbAdults` reste à 1**
-- Activer "Ajouter un co-emprunteur" (page 0) ne met pas à jour `nbAdults` (page 1)
-- Le plancher de reste à vivre est calculé pour 1 adulte (800€) au lieu de 2 (1600€)
-- **Fix :** dans `setCo(true)`, si `nbAdults === 1`, passer à `2` automatiquement
+**7. ~~Co-emprunteur activé mais `nbAdults` reste à 1~~** ✅ résolu — `setCo(true)` auto-incrémente `nbAdults` à 2
 
-**8. Le bouton "Recommencer" sans confirmation**
-- `resetAll()` s'exécute immédiatement au clic (`ui.js:79`), perte totale irréversible
-- **Fix :** ajouter une modale de confirmation avant `resetAll()`
+**8. ~~Le bouton "Recommencer" sans confirmation~~** ✅ résolu — bouton supprimé
 
 **9. Mode RvB inutilisable avec valeurs par défaut**
 - `appRate = 0`, `savRate = 0`, `rentRef = 0`, `rentInfl = 0`, `sellAgRate = 0`
 - Résultat biaisé : favorise toujours l'achat (épargne à 0%, pas de loyer de référence)
 - **Fix :** pré-remplir `appRate: 1.5`, `savRate: 3`, `rentInfl: 2`, `sellAgRate: 4`
 
-**10. Atterrissage sur page 4 si données existantes**
-- `main.js:344` : `if (_hasData) goTo(4)` — déstabilisant, aucun rappel du profil chargé
-- **Fix :** atterrir sur la home hub (quand implémentée) ou sur la page 3 avec un toast "Profil chargé"
+**10. ~~Atterrissage sur page 4 si données existantes~~** ✅ résolu — `goTo(4)` supprimé, l'app atterrit sur la home
 
 ### Incohérences de contenu
 
