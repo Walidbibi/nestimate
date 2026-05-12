@@ -167,3 +167,94 @@ Analyse réalisée en simulant le parcours d'un primo-accédant (CDI, conjoint, 
 - **Calculateur inversé repositionné** : actuellement au-dessus des résultats en page 3 — à déplacer après les métriques principales
 - **Export / partage** : URL avec paramètres encodés pour partager une simulation
 - **Barre flottante** : affiche les valeurs de `propPrice` à la volée mais pas cohérentes avec le curseur apport simulé (`_simApport`)
+
+---
+
+## Feature à implémenter — Mode débutant / expert
+
+### Contexte
+
+L'app souffre d'un écart entre son audience cible (particuliers lambda, primo-accédants) et la complexité de son interface (TAEG, quotité, garantie bancaire, HCSF...). Solution : un seul toggle "Mode expert" dans le header, pas deux interfaces séparées (trop coûteux à maintenir).
+
+### Principe
+
+Un boolean `expertMode` (sauvegardé en localStorage) qui contrôle l'affichage. **Un seul codebase, un seul localStorage.**
+
+**Mode débutant (défaut) :**
+- Les champs techniques sont préremplis avec des valeurs réalistes et regroupés dans un bloc collapsible "Paramètres avancés"
+- Labels en langage courant ("Vos mensualités de crédit auto/conso" au lieu de "Crédits en cours")
+- Tooltips plus présents et pédagogiques
+- Bouton "Utiliser des valeurs typiques" dans le mode RvB qui prérempli tous les champs
+
+**Mode expert (toggle dans le header) :**
+- Les blocs "Paramètres avancés" s'ouvrent tous par défaut
+- Labels techniques conservés (quotité, TAEG, HCSF...)
+- Accès direct à tous les champs sans friction
+
+### Valeurs préremplies en mode débutant
+
+À injecter dans `DEFAULT_VALUES` (`utils.js`) :
+```js
+notaryRate: 7.5      // ancien — l'utilisateur peut changer si neuf
+guaranteeRate: 1     // cautionnement type Crédit Logement
+insuranceRate: 0.36  // taux moyen marché
+quotite1: 100        // emprunteur seul = 100%
+brokerPct: 1         // si courtier activé
+rentPct: 90          // taux retenu standard banques
+// RvB
+appRate: 1.5
+savRate: 3
+rentInfl: 2
+sellAgRate: 4
+```
+
+### Implémentation
+
+- Ajouter un toggle `expertMode` dans le header (à côté du bouton thème)
+- Ajouter la classe CSS `expert-mode` sur `<body>` quand actif
+- Les blocs avancés ont la classe `advanced-block` : `display:none` par défaut, `display:block` en `.expert-mode`
+- Les labels alternatifs utilisent `data-label-simple` / `data-label-expert` et sont swappés par JS
+- Sauvegarder `expertMode` dans localStorage (clé séparée, pas dans le profil)
+
+### Ce qu'on ne fait pas
+
+- Pas deux pages ou deux flows séparés
+- Pas de choix de niveau au premier lancement (trop de friction)
+- Pas de masquage des résultats — seuls les champs de saisie avancés sont cachés
+
+---
+
+## Feature à implémenter — Simulation de revente
+
+### Contexte
+
+L'app cible des particuliers lambda, pas uniquement des primo-accédants. Un cas très fréquent : revendre son bien actuel pour financer un nouvel achat. Cette feature doit rester invisible pour ceux qui n'en ont pas besoin.
+
+### Principe
+
+Bloc collapsible **"🏠 J'ai un bien à revendre"** à insérer sur la page 2 (Financement), juste après le champ `apport`.
+
+Quand ouvert, 3 champs :
+- **Prix de vente estimé** (`salePrice`)
+- **Capital restant dû** (`saleCapLeft`) — 0 si crédit remboursé
+- **Frais d'agence à la revente (%)** (`saleAgRate`) — défaut : 4%
+
+Calcul affiché en temps réel :
+```
+apport net revente = prix vente − capital restant dû − (prix vente × frais agence)
+```
+
+Ce montant **remplace automatiquement** la valeur du champ `apport` dans tous les calculs (`calcBudget`, `calcProject`, etc.) tant que le bloc est activé.
+
+### Implémentation
+
+- Ajouter `salePrice`, `saleCapLeft`, `saleAgRate` dans `PFIELDS` et `DEFAULT_VALUES` (`saleAgRate: 4`)
+- Ajouter un boolean `useSaleProceeds` (checkbox/toggle) pour activer/désactiver le bloc
+- Modifier `calcBudget()` : si `useSaleProceeds` actif, calculer `saleNet` et l'utiliser comme apport à la place de `num('apport')`
+- Afficher `saleNet` calculé sous les 3 champs pour que l'utilisateur voie immédiatement son apport net
+
+### Ce qu'on ne fait pas
+
+- Pas de calcul de plus-value immobilière (trop complexe, cas trop variables)
+- Pas de nouvelle page — juste un bloc collapsible
+- L'utilisateur sans bien à revendre ne voit rien de différent
