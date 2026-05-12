@@ -163,6 +163,10 @@ function setCo(active) {
   document.querySelectorAll('.co-only').forEach(el => el.classList.toggle('hidden', !active));
   G('soloBtn').classList.toggle('active', !active);
   G('coBtn').classList.toggle('active', active);
+  if (active && num('nbAdults') < 2) {
+    const el = G('nbAdults');
+    if (el) el.value = 2;
+  }
   refresh();
 }
 
