@@ -80,9 +80,14 @@ function calcProject(price, years, overrides = {}) {
   const brF = num('brokerFees');
 
   const notary = price * pct('notaryRate');
-  const guarantee = b.borrow * pct('guaranteeRate');
-  const total = price + ag + wk + notary + guarantee + bF + brF;
-  const financed = Math.max(total - b.apport, 0);
+  const gr = pct('guaranteeRate');
+  const baseTotal = price + ag + wk + notary + bF + brF;
+  // Résolution algébrique : financed = total - apport et guarantee = financed * gr
+  const financed = gr < 1
+    ? Math.max((baseTotal - b.apport) / (1 - gr), 0)
+    : Math.max(baseTotal - b.apport, 0);
+  const guarantee = financed * gr;
+  const total = baseTotal + guarantee;
   const lm = mpmt(financed, ar, years);
   const insM = financed * ir / 12;
   const totM = lm + insM;
@@ -224,8 +229,36 @@ function calcTAEG() {
   }
   const rM = (lo + hi) / 2;
   const taeg = (Math.pow(1 + rM, 12) - 1) * 100;
-  const insAnnual = b.insM * 12 / b.borrow * 100;
+  const insAnnual = num('insuranceRate') + (hasCo ? num('insuranceRate2') : 0);
   const feesAnnual = fees / b.borrow / num('duration') * 100;
+
+  return { taeg, rateNom: num('rate'), insAnnual, feesAnnual };
+}
+
+// TAEG calculé sur le capital réel du bien testé (page 4)
+function calcTAEGProject() {
+  const price = num('propPrice');
+  if (price <= 0) return null;
+  const d = calcProject(price, num('duration'));
+  if (d.financed <= 0 || d.lm <= 0) return null;
+
+  const P = d.financed;
+  const M = d.totM;
+  const n = num('duration') * 12;
+  const fees = d.bF + d.brF + d.guarantee;
+  const netP = P - fees;
+  if (netP <= 0 || n <= 0) return null;
+
+  const pv = r => r <= 0 ? M * n : M * (1 - Math.pow(1 + r, -n)) / r;
+  let lo = 1e-6, hi = 1.5 / 12;
+  for (let i = 0; i < 120; i++) {
+    const mid = (lo + hi) / 2;
+    pv(mid) > netP ? lo = mid : hi = mid;
+  }
+  const rM = (lo + hi) / 2;
+  const taeg = (Math.pow(1 + rM, 12) - 1) * 100;
+  const insAnnual = num('insuranceRate') + (hasCo ? num('insuranceRate2') : 0);
+  const feesAnnual = fees / P / num('duration') * 100;
 
   return { taeg, rateNom: num('rate'), insAnnual, feesAnnual };
 }

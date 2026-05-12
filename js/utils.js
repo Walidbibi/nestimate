@@ -29,11 +29,11 @@ const PFIELDS = [
 
 const DEFAULT_VALUES = {
   salary1: 0, months1: 12, salary2: 0, months2: 12,
-  rentIncome: 0, rentPct: 0, otherIncome: 0,
+  rentIncome: 0, rentPct: 90, otherIncome: 0,
   currentCredits: 0, alimonyPaid: 0, rentPaid: 0, otherExpenses: 0, nbAdults: 1, nbChildren: 0,
   apport: 0, rate: 0, insuranceRate: 0, insuranceRate2: 0,
   quotite1: 0, quotite2: 0, duration: 20, debtRatio: 35,
-  notaryRate: 0, guaranteeRate: 0, bankFees: 0,
+  notaryRate: 0, guaranteeRate: 0, bankFees: 0, brokerPct: 1,
   invTarget: 0,
   propPrice: 0, agencyFees: 0, works: 0,
   holdYears: 10, appRate: 0, rentRef: 0, rentInfl: 0,

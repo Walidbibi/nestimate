@@ -474,6 +474,7 @@ function refreshBudget() {
   if (price <= 0) {
     G('ravCard').style.display = 'none';
     G('drCard').style.display = 'none';
+    const tcp = G('taegCardProj'); if (tcp) tcp.style.display = 'none';
     refreshDossierBadge(0, 0, false);
   } else {
     const d = calcProject(price, num('duration'));
@@ -564,6 +565,19 @@ function refreshBudget() {
       ps.classList.add('warn');
       G('projHead').textContent = 'Ce bien met le budget sous tension.';
       G('projCmt').textContent = 'La mensualité dépasse la cible de ' + euro(Math.abs(d.tension)) + '.';
+    }
+
+    // TAEG spécifique au bien testé
+    const taegP = calcTAEGProject();
+    const tcp = G('taegCardProj');
+    if (tcp) {
+      tcp.style.display = taegP ? 'block' : 'none';
+      if (taegP) {
+        G('taegVal3').textContent = fmtPct(taegP.taeg);
+        G('taegNominal3').textContent = fmtPct(taegP.rateNom);
+        G('taegIns3').textContent = fmtPct(taegP.insAnnual);
+        G('taegFees3').textContent = fmtPct(taegP.feesAnnual);
+      }
     }
   }
 }
@@ -673,10 +687,11 @@ function refreshResults() {
 
     const ps = G('resProjStatus');
     ps.className = 'status';
-    if (d.tension >= 0 && d.remaining >= 1000) {
+    const resFloor = ravFloor();
+    if (d.tension >= 0 && d.remaining >= resFloor) {
       ps.classList.add('ok');
       G('resProjHead').textContent = 'Le bien paraît soutenable.';
-      G('resProjCmt').textContent = 'Mensualité (' + euro(d.totM) + ') sous la cible (' + euro(d.disp) + '). Reste à vivre confortable.';
+      G('resProjCmt').textContent = 'Mensualité (' + euro(d.totM) + ') sous la cible (' + euro(d.disp) + '). Reste à vivre au-dessus du plancher foyer (' + euro(resFloor) + ').';
     } else if (d.tension >= 0) {
       ps.classList.add('warn');
       G('resProjHead').textContent = 'Finançable mais reste à vivre serré.';
