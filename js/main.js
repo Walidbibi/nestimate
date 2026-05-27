@@ -425,20 +425,21 @@ function _profileSummaryHtml(data) {
 }
 
 function toggleProfileCard() {
+  const card = G('hcCard0');
+  if (!card) return;
+
+  if (card.classList.contains('hc-open')) {
+    card.classList.remove('hc-open');
+    return;
+  }
+
   const b = calcBudget();
   if (b.inc <= 0) { goTo(0); return; }
 
-  const card = G('hcCard0');
-  if (!card) return;
-  const isOpen = card.classList.contains('hc-open');
-  if (isOpen) {
-    card.classList.remove('hc-open');
-  } else {
-    const data = _profiles.list[_profiles.current] || {};
-    const el = G('hcProfileSummary');
-    if (el) el.innerHTML = _profileSummaryHtml(data);
-    card.classList.add('hc-open');
-  }
+  const data = _profiles.list[_profiles.current] || {};
+  const el = G('hcProfileSummary');
+  if (el) el.innerHTML = _profileSummaryHtml(data);
+  card.classList.add('hc-open');
 }
 
 function renderProfileList() {
