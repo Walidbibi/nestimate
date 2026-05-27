@@ -36,8 +36,8 @@ const DEFAULT_VALUES = {
   notaryRate: 8, guaranteeRate: 1, bankFees: 0, brokerPct: 1,
   invTarget: 0,
   propPrice: 0, agencyFees: 0, works: 0,
-  holdYears: 10, appRate: 0, rentRef: 0, rentInfl: 0,
-  ownerCosts: 0, savRate: 0, sellAgRate: 0, rvbPrice: 0
+  holdYears: 10, appRate: 1.5, rentRef: 0, rentInfl: 2,
+  ownerCosts: 0, savRate: 3, sellAgRate: 4, rvbPrice: 0
 };
 
 const TIPS = {

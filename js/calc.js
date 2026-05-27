@@ -136,13 +136,17 @@ function calcRvb() {
   const dy = num('duration');
 
   const notary = price * pct('notaryRate');
-  const guarantee = b.borrow * pct('guaranteeRate');
+  const gr = pct('guaranteeRate');
   const bF = num('bankFees');
   const brF = num('brokerFees');
   const ag = num('agencyFees');
+  const baseTotal = price + notary + ag + bF + brF;
+  // Résolution algébrique identique à calcProject
+  const financed = gr < 1
+    ? Math.max((baseTotal - b.apport) / (1 - gr), 0)
+    : Math.max(baseTotal - b.apport, 0);
+  const guarantee = financed * gr;
   const totalEntry = notary + guarantee + bF + brF;
-
-  const financed = Math.max(price + notary + guarantee + ag + bF + brF - b.apport, 0);
   const lm = mpmt(financed, ar, dy);
   const insM = financed * ir / 12;
   const totM = lm + insM;
