@@ -642,28 +642,47 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 
 /* Carte expandable profil */
 .home-card-expandable {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: stretch;
   align-items: stretch;
   padding: 0;
   overflow: hidden;
+  cursor: default;
 }
 .hc-row {
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
-  gap: 14px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 100%;
   padding: 18px 16px;
   cursor: pointer;
+  gap: 14px;
 }
 .home-card-expandable:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(1,105,111,.12); }
-.home-card-expandable:hover .hc-row { transform: none; }
+.hc-expand-body .pli-summary { border-top: none; margin-top: 0; padding-top: 0; }
 .hc-expand-body {
-  display: none;
   border-top: 1px solid var(--border);
   padding: 14px 16px 16px;
 }
-.home-card-expandable.hc-open .hc-expand-body { display: block; }
 .home-card-expandable.hc-open .hc-arrow { transform: rotate(90deg); }
-.hc-expand-footer { margin-top: 12px; display: flex; justify-content: flex-end; }
+.hc-expand-footer { margin-top: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+.hc-expand-footer .btn { padding: 6px 12px; font-size: .82rem; }
+.btn-danger {
+  background: #fee2e2; color: #ef4444;
+  border: 1.5px solid #fca5a5;
+  border-radius: var(--radius);
+  padding: 6px 10px; font-size: .82rem; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.btn-danger:hover { background: #ef4444; color: #fff; }
+[data-theme="dark"] .btn-danger { background: rgba(239,68,68,.15); color: #f87171; border-color: rgba(239,68,68,.35); }
+[data-theme="dark"] .btn-danger:hover { background: #ef4444; color: #fff; }
 
 @media (max-width: 640px) { .home-grid { grid-template-columns: 1fr; } }
 

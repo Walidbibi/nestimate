@@ -16,7 +16,7 @@ function applyProfile(data) {
   PFIELDS.forEach(id => {
     const el = G(id);
     if (!el) return;
-    if (data && data[id] !== undefined) el.value = data[id];
+    if (data && data[id] !== undefined && data[id] !== '') el.value = data[id];
     else if (DEFAULT_VALUES[id] !== undefined) el.value = DEFAULT_VALUES[id];
     else el.value = '';
   });
@@ -137,7 +137,11 @@ function _createProfile(name, clone) {
   _profiles.list[name] = clone && _profiles.current ? { ..._profiles.list[_profiles.current] } : {};
   _profiles.current = name;
   if (!clone) {
-    PFIELDS.forEach(id => { const el = G(id); if (el) el.value = ''; });
+    PFIELDS.forEach(id => {
+      const el = G(id);
+      if (!el) return;
+      el.value = id in DEFAULT_VALUES ? DEFAULT_VALUES[id] : '';
+    });
     setCo(false);
     const brokerEl = G('useBroker');
     if (brokerEl) { brokerEl.checked = false; updateBroker(); }
@@ -146,6 +150,40 @@ function _createProfile(name, clone) {
   renderProfileUI();
   closeProfileDropdown();
   if (!clone) refresh();
+}
+
+function deleteCurrentProfile() {
+  const name = _profiles.current;
+  if (!name) return;
+  const el = G('deleteProfileModalName');
+  if (el) el.textContent = '« ' + name + ' » sera définitivement supprimé.';
+  G('deleteProfileModal').style.display = 'flex';
+}
+function closeDeleteProfileModal() {
+  G('deleteProfileModal').style.display = 'none';
+}
+function confirmDeleteProfile() {
+  closeDeleteProfileModal();
+  const name = _profiles.current;
+  if (!name) return;
+  delete _profiles.list[name];
+  const remaining = Object.keys(_profiles.list);
+  const card = G('hcCard0');
+  const panel = G('hcExpandProfile');
+  if (card) card.classList.remove('hc-open');
+  if (panel) panel.style.display = 'none';
+  if (remaining.length === 0) {
+    _profiles.current = '';
+    PFIELDS.forEach(id => { const el = G(id); if (el) el.value = DEFAULT_VALUES[id] !== undefined ? DEFAULT_VALUES[id] : ''; });
+    setCo(false);
+    const br = G('useBroker'); if (br) { br.checked = false; updateBroker(); }
+  } else {
+    _profiles.current = remaining[remaining.length - 1];
+    applyProfile(_profiles.list[_profiles.current]);
+  }
+  _saveProfiles();
+  renderProfileUI();
+  refresh();
 }
 
 function deleteProfile(name) {
@@ -426,10 +464,12 @@ function _profileSummaryHtml(data) {
 
 function toggleProfileCard() {
   const card = G('hcCard0');
-  if (!card) return;
+  const panel = G('hcExpandProfile');
+  if (!card || !panel) return;
 
   if (card.classList.contains('hc-open')) {
     card.classList.remove('hc-open');
+    panel.style.display = 'none';
     return;
   }
 
@@ -439,6 +479,7 @@ function toggleProfileCard() {
   const data = _profiles.list[_profiles.current] || {};
   const el = G('hcProfileSummary');
   if (el) el.innerHTML = _profileSummaryHtml(data);
+  panel.style.display = 'block';
   card.classList.add('hc-open');
 }
 

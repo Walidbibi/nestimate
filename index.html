@@ -56,9 +56,10 @@
           </div>
           <span class="hc-arrow" id="hcArrow0">&#8594;</span>
         </div>
-        <div class="hc-expand-body" id="hcExpandProfile">
+        <div class="hc-expand-body" id="hcExpandProfile" style="display:none">
           <div class="pli-summary" id="hcProfileSummary"></div>
           <div class="hc-expand-footer">
+            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteCurrentProfile()" title="Supprimer ce profil">&#128465;</button>
             <button class="btn primary" onclick="event.stopPropagation(); goTo(0)">&#9998; Modifier</button>
           </div>
         </div>
@@ -1082,6 +1083,17 @@
 </div><!-- shell -->
 
 <!-- Modale saisie nom de profil -->
+<div class="popup-overlay" id="deleteProfileModal" style="display:none" onclick="if(event.target===this)closeDeleteProfileModal()">
+  <div class="popup-box" style="max-width:340px">
+    <h3 style="margin-bottom:10px">Supprimer ce profil ?</h3>
+    <p id="deleteProfileModalName" style="color:var(--muted);font-size:.9rem;margin-bottom:20px"></p>
+    <div class="prof-actions">
+      <button class="prof-btn prof-btn-outline" onclick="closeDeleteProfileModal()">Annuler</button>
+      <button class="prof-btn" style="background:#ef4444;border-color:#ef4444" onclick="confirmDeleteProfile()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
 <div class="popup-overlay" id="profModal" style="display:none" onclick="if(event.target===this)closeProfModal()">
   <div class="popup-box" style="max-width:360px">
     <button class="popup-close" onclick="closeProfModal()">&#10005;</button>
