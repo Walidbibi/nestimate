@@ -636,9 +636,34 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   padding: 2px 8px; border-radius: 6px;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.hc-arrow { font-size: 1rem; color: var(--muted); flex-shrink: 0; }
+.hc-arrow { font-size: 1rem; color: var(--muted); flex-shrink: 0; transition: transform .2s; }
 .home-card-locked { opacity: .55; }
 .home-card-locked .hc-meta { background: var(--warn-soft); color: var(--warn); }
+
+/* Carte expandable profil */
+.home-card-expandable {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+.hc-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 16px;
+  cursor: pointer;
+}
+.home-card-expandable:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(1,105,111,.12); }
+.home-card-expandable:hover .hc-row { transform: none; }
+.hc-expand-body {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 14px 16px 16px;
+}
+.home-card-expandable.hc-open .hc-expand-body { display: block; }
+.home-card-expandable.hc-open .hc-arrow { transform: rotate(90deg); }
+.hc-expand-footer { margin-top: 12px; display: flex; justify-content: flex-end; }
 
 @media (max-width: 640px) { .home-grid { grid-template-columns: 1fr; } }
 

@@ -82,6 +82,11 @@ function refreshHome() {
 
   const el0 = G('hcMeta0');
   if (el0) el0.textContent = profileOk ? euro(b.inc) + ' /mois nets' : 'À compléter';
+  const card0 = G('hcCard0');
+  if (card0 && card0.classList.contains('hc-open') && typeof _profileSummaryHtml === 'function') {
+    const summaryEl = G('hcProfileSummary');
+    if (summaryEl) summaryEl.innerHTML = _profileSummaryHtml(_profiles.list[_profiles.current] || {});
+  }
 
   const el1 = G('hcMeta1');
   if (el1) {

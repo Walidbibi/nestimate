@@ -46,15 +46,23 @@
   <div id="page-home" class="home-page active">
     <div class="home-grid">
 
-      <button class="home-card" id="hcCard0" onclick="goTo('profiles')">
-        <div class="hc-icon">👤</div>
-        <div class="hc-body">
-          <div class="hc-title">Mon profil financier</div>
-          <div class="hc-desc">Revenus &amp; charges</div>
-          <div class="hc-meta" id="hcMeta0">À compléter</div>
+      <div class="home-card home-card-expandable" id="hcCard0">
+        <div class="hc-row" onclick="toggleProfileCard()" role="button" tabindex="0">
+          <div class="hc-icon">👤</div>
+          <div class="hc-body">
+            <div class="hc-title">Mon profil financier</div>
+            <div class="hc-desc">Revenus &amp; charges</div>
+            <div class="hc-meta" id="hcMeta0">À compléter</div>
+          </div>
+          <span class="hc-arrow" id="hcArrow0">&#8594;</span>
         </div>
-        <span class="hc-arrow">&#8594;</span>
-      </button>
+        <div class="hc-expand-body" id="hcExpandProfile">
+          <div class="pli-summary" id="hcProfileSummary"></div>
+          <div class="hc-expand-footer">
+            <button class="btn primary" onclick="event.stopPropagation(); goTo(0)">&#9998; Modifier</button>
+          </div>
+        </div>
+      </div>
 
       <button class="home-card" id="hcCard1" onclick="goTo('montages')">
         <div class="hc-icon">💰</div>
