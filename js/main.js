@@ -474,7 +474,10 @@ function toggleProfileCard() {
   }
 
   const b = calcBudget();
-  if (b.inc <= 0) { goTo(0); return; }
+  if (b.inc <= 0) {
+    if (!_profiles.current) _createProfile('Mon profil', false);
+    goTo(0); return;
+  }
 
   const data = _profiles.list[_profiles.current] || {};
   const el = G('hcProfileSummary');

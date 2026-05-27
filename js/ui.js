@@ -8,6 +8,7 @@ function _hideAll() {
 
 function goTo(step) {
   if (step === 'home') {
+    if (typeof save === 'function') save();
     _hideAll(); G('page-home').classList.add('active');
     currentPage = -1; currentMode = 'budget';
     window.scrollTo({ top: 0, behavior: 'smooth' });
