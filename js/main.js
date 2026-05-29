@@ -152,19 +152,31 @@ function _createProfile(name, clone) {
   if (!clone) refresh();
 }
 
+let _pendingDeleteName = null;
+
 function deleteCurrentProfile() {
-  const name = _profiles.current;
-  if (!name) return;
+  _pendingDeleteName = _profiles.current;
+  if (!_pendingDeleteName) return;
+  const el = G('deleteProfileModalName');
+  if (el) el.textContent = '« ' + _pendingDeleteName + ' » sera définitivement supprimé.';
+  G('deleteProfileModal').style.display = 'flex';
+}
+
+function confirmDeleteFromDropdown(name) {
+  _pendingDeleteName = name;
+  closeProfileDropdown();
   const el = G('deleteProfileModalName');
   if (el) el.textContent = '« ' + name + ' » sera définitivement supprimé.';
   G('deleteProfileModal').style.display = 'flex';
 }
+
 function closeDeleteProfileModal() {
   G('deleteProfileModal').style.display = 'none';
+  _pendingDeleteName = null;
 }
 function confirmDeleteProfile() {
+  const name = _pendingDeleteName || _profiles.current;
   closeDeleteProfileModal();
-  const name = _profiles.current;
   if (!name) return;
   delete _profiles.list[name];
   const remaining = Object.keys(_profiles.list);
@@ -260,7 +272,7 @@ function renderProfileDropdown() {
     const name = Object.keys(_profiles.list)[parseInt(btn.dataset.idx)];
     if (action === 'switch') switchProfile(name);
     else if (action === 'rename') renameProfile(name);
-    else if (action === 'delete') deleteProfile(name);
+    else if (action === 'delete') confirmDeleteFromDropdown(name);
     else if (action === 'new') promptNewProfile(false);
     else if (action === 'clone') promptNewProfile(true);
   };
@@ -525,7 +537,7 @@ function renderProfileList() {
       switchProfile(name);
       goTo(0);
     } else if (btn.dataset.action === 'delete') {
-      deleteProfile(name);
+      confirmDeleteFromDropdown(name);
     }
   };
 }
@@ -671,6 +683,127 @@ document.addEventListener('click', e => {
     nav.classList.toggle('scrolled', window.scrollY > 10);
   }, { passive: true });
 })();
+
+// ── Simulation de revente ──────────────────────────────────────
+
+let _saleOpen = false;
+
+function refreshSaleBlock() {
+  const block = G('saleBlock');
+  if (!block) return;
+  const hasBiens = typeof _biens !== 'undefined' && _biens.length > 0;
+  block.style.display = hasBiens ? '' : 'none';
+  if (!hasBiens && _saleOpen) {
+    _saleOpen = false;
+    const body = G('saleBlockBody');
+    if (body) body.style.display = 'none';
+    const arrow = G('saleToggleArrow');
+    if (arrow) arrow.classList.remove('open');
+  }
+  if (_saleOpen) _refreshSaleData();
+}
+
+function toggleSaleBlock() {
+  _saleOpen = !_saleOpen;
+  const body = G('saleBlockBody');
+  const arrow = G('saleToggleArrow');
+  if (body) body.style.display = _saleOpen ? 'block' : 'none';
+  if (arrow) arrow.classList.toggle('open', _saleOpen);
+  if (_saleOpen) _populateSaleBienSelect();
+  refresh();
+}
+
+function _populateSaleBienSelect() {
+  const sel = G('saleBienId');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Sélectionner un bien —</option>';
+  (_biens || []).forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.name || 'Bien sans nom';
+    if (b.id === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function onSaleBienChange() {
+  refresh();
+}
+
+function _refreshSaleData() {
+  const sel = G('saleBienId');
+  const bienId = sel ? sel.value : '';
+  const dataGrid = G('saleDataGrid');
+  const saleResult = G('saleResult');
+
+  if (!bienId) {
+    if (dataGrid) dataGrid.style.display = 'none';
+    if (saleResult) saleResult.style.display = 'none';
+    return;
+  }
+
+  const bien = (_biens || []).find(b => b.id === bienId);
+  if (!bien) { if (dataGrid) dataGrid.style.display = 'none'; return; }
+
+  if (dataGrid) dataGrid.style.display = '';
+
+  // Prix de vente (currentValue ou price en fallback)
+  const salePrice = parseFloat(bien.currentValue) || parseFloat(bien.price) || 0;
+  const salePriceEl = G('salePriceDisplay');
+  if (salePriceEl) salePriceEl.textContent = euro(salePrice);
+
+  // Capital restant dû
+  let crd = 0;
+  const creditWarn = G('saleCreditWarning');
+  if (bien.creditId) {
+    const credit = (typeof _credits !== 'undefined' ? _credits : []).find(c => c.id === bien.creditId);
+    if (credit) {
+      crd = computeCredit(credit).crd || 0;
+      if (creditWarn) creditWarn.style.display = 'none';
+    } else {
+      if (creditWarn) creditWarn.style.display = '';
+    }
+  } else {
+    if (creditWarn) creditWarn.style.display = 'none';
+  }
+  const crdEl = G('saleCrdDisplay');
+  if (crdEl) crdEl.textContent = crd > 0 ? euro(crd) : '0 €';
+
+  // Calcul apport net
+  const agRate = parseFloat((G('saleAgRate') || {}).value) || 0;
+  const agFees = salePrice * agRate / 100;
+  const saleNet = salePrice - crd - agFees;
+  const personalApport = num('apport');
+  const apportTotal = Math.max(saleNet, 0) + personalApport;
+
+  if (saleResult) saleResult.style.display = '';
+  const netEl = G('saleNetDisplay');
+  if (netEl) netEl.textContent = euro(saleNet);
+  const totalEl = G('saleTotalDisplay');
+  if (totalEl) totalEl.textContent = euro(apportTotal);
+
+  const negWarn = G('saleNegativeWarning');
+  if (negWarn) negWarn.style.display = saleNet < 0 ? '' : 'none';
+}
+
+function getSaleApport() {
+  if (!_saleOpen) return null;
+  const sel = G('saleBienId');
+  if (!sel || !sel.value) return null;
+  const bien = (_biens || []).find(b => b.id === sel.value);
+  if (!bien) return null;
+  const salePrice = parseFloat(bien.currentValue) || parseFloat(bien.price) || 0;
+  let crd = 0;
+  if (bien.creditId) {
+    const credit = (typeof _credits !== 'undefined' ? _credits : []).find(c => c.id === bien.creditId);
+    if (credit) crd = computeCredit(credit).crd || 0;
+  }
+  const agRate = parseFloat((G('saleAgRate') || {}).value) || 0;
+  const saleNet = salePrice - crd - salePrice * agRate / 100;
+  const personalApport = num('apport');
+  return Math.max(saleNet, 0) + personalApport;
+}
 
 // ── Init ──────────────────────────────────────────────────────
 

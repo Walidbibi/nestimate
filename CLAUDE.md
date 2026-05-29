@@ -245,17 +245,30 @@ Apport total        = Apport net revente + Apport personnel
 - `saleAgRate: 4` dans `DEFAULT_VALUES`
 - Ajouté dans `PFIELDS` (champ de saisie DOM)
 
-**Étape 3 — Créer le bloc HTML collapsible** *(à faire)*
+**Étape 3 — Créer le bloc HTML collapsible** ✅
+- Bloc `#saleBlock` sur page-2 après le champ `apport`, CSS `.sale-block` / `.sale-toggle` / `.sale-readonly` / `.sale-result`
 
-**Étape 4 — Logique d'affichage conditionnel** *(à faire)*
+**Étape 4 — Logique d'affichage conditionnel** ✅
+- `refreshSaleBlock()` : visible si `_biens.length > 0`, appelé dans `refresh()`
+- `toggleSaleBlock()` : ouvre/ferme, populate le select
 
-**Étape 5 — Lecture auto des données bien/crédit** *(à faire)*
+**Étape 5 — Lecture auto des données bien/crédit** ✅
+- `_refreshSaleData()` : lit `bien.currentValue` (fallback `price`), CRD via `computeCredit(credit).crd`
+- Warning si aucun crédit lié
 
-**Étape 6 — Calcul `apportTotal` en lecture seule** *(à faire)*
+**Étape 6 — Calcul `apportTotal` en lecture seule** ✅
+- `saleNet = salePrice − crd − agFees`, `apportTotal = max(saleNet,0) + num('apport')`
+- Affiché dans `#saleNetDisplay` / `#saleTotalDisplay`
 
-**Étape 7 — Injecter dans `calcBudget` et `calcProject`** *(à faire)*
+**Étape 7 — Injecter dans `calcBudget` et `calcProject`** ✅
+- `getSaleApport()` retourne l'apport total quand le bloc est actif
+- `calcBudget()` : priorité `_simApport` > `getSaleApport()` > `num('apport')`
+- Ligne "Apport total (revente + personnel)" dans le bilan (page 6), visible seulement si actif
+- Curseur simulation apport (page 4) initialisé sur l'apport effectif
 
-**Étape 8 — Warning apport négatif + bilan final** *(à faire)*
+**Étape 8 — Warning apport négatif + bilan final** ✅
+- `#saleNegativeWarning` affiché si `saleNet < 0`
+- `#resSaleApportLine` dans le bilan affiche `b.apport` quand revente active
 
 ### Champ à ne pas confondre
 - Ajouter un boolean état JS `useSaleProceeds` + `selectedSaleBienIdx` (non persistés dans le profil)

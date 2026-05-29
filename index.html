@@ -417,6 +417,54 @@
           <label for="apport">Apport personnel</label>
           <input id="apport" type="number" value="0" min="0" step="1000" inputmode="decimal">
         </div>
+
+        <!-- ── Bloc revente ── visible si _biens.length > 0 ── -->
+        <div id="saleBlock" class="sale-block" style="display:none; grid-column:1/-1">
+          <button type="button" class="sale-toggle" onclick="toggleSaleBlock()">
+            <span>🏠 J'ai un bien à revendre</span>
+            <span class="sale-toggle-arrow" id="saleToggleArrow">&#8594;</span>
+          </button>
+          <div id="saleBlockBody" class="sale-block-body" style="display:none">
+            <div class="field" style="margin-top:12px">
+              <label for="saleBienId">Bien à revendre</label>
+              <select id="saleBienId" onchange="onSaleBienChange()">
+                <option value="">— Sélectionner un bien —</option>
+              </select>
+            </div>
+            <div id="saleDataGrid" class="form-grid" style="display:none; margin-top:8px">
+              <div class="field">
+                <label>Prix de vente estimé</label>
+                <div class="sale-readonly" id="salePriceDisplay">—</div>
+              </div>
+              <div class="field">
+                <label>Capital restant dû</label>
+                <div class="sale-readonly" id="saleCrdDisplay">—</div>
+                <div id="saleCreditWarning" class="hint warn-hint" style="display:none">
+                  ⚠ Aucun crédit lié — vérifiez que vous n'en avez pas oublié un.
+                </div>
+              </div>
+              <div class="field">
+                <label for="saleAgRate">Frais d'agence revente (%)</label>
+                <input id="saleAgRate" type="number" value="4" min="0" max="20" step="0.1" inputmode="decimal">
+              </div>
+            </div>
+            <div id="saleResult" class="sale-result" style="display:none">
+              <div class="fee-line">
+                <span>Apport net de revente</span>
+                <strong class="mono" id="saleNetDisplay">—</strong>
+              </div>
+              <div class="fee-line sale-total-line">
+                <span>Apport total (revente + personnel)</span>
+                <strong class="mono" id="saleTotalDisplay">—</strong>
+              </div>
+              <div id="saleNegativeWarning" class="hint warn-hint" style="display:none">
+                ⚠ Apport net négatif — le capital restant dépasse le prix de vente.
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- ── Fin bloc revente ── -->
+
         <div class="field">
           <label for="rate">Taux nominal du prêt (%)</label>
           <input id="rate" type="number" value="0" min="0" step="0.01" inputmode="decimal">
@@ -897,6 +945,10 @@
         <div class="result hl-green"><div class="rlabel">Prix du bien visable</div><div class="rvalue mono" id="resPropMax">—</div></div>
         <div class="result hl-blue"><div class="rlabel">Enveloppe projet totale</div><div class="rvalue mono" id="resTotalEnv">—</div></div>
         <div class="result"><div class="rlabel">Montant empruntable</div><div class="rvalue mono" id="resBorrow">—</div></div>
+      </div>
+      <div id="resSaleApportLine" class="fee-line sale-total-line" style="display:none; margin-top:8px;">
+        <span>🏠 Apport total (revente + personnel)</span>
+        <strong class="mono" id="resSaleApportVal">—</strong>
       </div>
       <div class="monthly-box" style="margin-top:14px;">
         <div class="mrow"><span>Mensualité prêt (capital + intérêts)</span><strong class="mono" id="resLoanM">—</strong></div>
