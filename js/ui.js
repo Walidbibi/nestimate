@@ -91,12 +91,20 @@ function refreshHome() {
 
   const el1 = G('hcMeta1');
   if (el1) {
+    const dur = num('duration');
     const r = num('rate');
-    if (r > 0) {
-      const taegD = calcTAEG();
-      const parts = [num('duration') + ' ans'];
-      if (num('apport') > 0) parts.push('Apport ' + euro(num('apport')));
-      if (taegD) parts.push('TAEG ' + taegD.taeg.toFixed(2) + '%');
+    if (dur > 0 || r > 0) {
+      const parts = [];
+      if (dur > 0) parts.push(dur + ' ans');
+      if (r > 0) {
+        const taegD = calcTAEG();
+        if (taegD) parts.push('TAEG ' + taegD.taeg.toFixed(2) + '%');
+      } else {
+        parts.push('Taux à renseigner');
+      }
+      const saleAp = typeof getSaleApport === 'function' ? getSaleApport() : null;
+      const ap = saleAp !== null ? saleAp : num('apport');
+      if (ap > 0) parts.push('Apport ' + euro(ap));
       el1.textContent = parts.join(' · ');
     } else {
       el1.textContent = 'À compléter';
