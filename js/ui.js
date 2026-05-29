@@ -381,7 +381,8 @@ function refreshFloatBar() {
 // ── Curseur apport simulation ─────────────────────────────────
 
 function initSimApport() {
-  const profileAp = num('apport');
+  const saleAp = typeof getSaleApport === 'function' ? getSaleApport() : null;
+  const profileAp = saleAp !== null ? saleAp : num('apport');
   const maxVal = Math.ceil(Math.max(profileAp * 2.5, 150000) / 10000) * 10000;
   const sl = G('simApport');
   if (!sl) return;
@@ -396,7 +397,8 @@ function initSimApport() {
 function onSimApport() {
   const sl = G('simApport');
   const val = parseInt(sl.value);
-  const profileAp = num('apport');
+  const saleAp = typeof getSaleApport === 'function' ? getSaleApport() : null;
+  const profileAp = saleAp !== null ? saleAp : num('apport');
   _simApport = val;
   G('simApportVal').textContent = euro(val);
   const modified = val !== profileAp;
@@ -671,6 +673,13 @@ function refreshResults() {
   G('resPropMax').textContent = euro(b.propMax);
   G('resTotalEnv').textContent = euro(b.env);
   G('resBorrow').textContent = euro(b.borrow);
+
+  const saleActive = typeof getSaleApport === 'function' && getSaleApport() !== null;
+  const saleApportLine = G('resSaleApportLine');
+  if (saleApportLine) {
+    saleApportLine.style.display = saleActive ? '' : 'none';
+    if (saleActive) G('resSaleApportVal').textContent = euro(b.apport);
+  }
   G('resLoanM').textContent = euro(b.lm);
   G('resInsM').textContent = euro(b.insM);
   G('resTotalM').textContent = euro(b.disp);
@@ -981,5 +990,6 @@ function refresh() {
   if (currentMode === 'rvb') refreshRvb();
   if (currentPage === -1) refreshHome();
   refreshFloatBar();
+  if (typeof refreshSaleBlock === 'function') refreshSaleBlock();
   save();
 }

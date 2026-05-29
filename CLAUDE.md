@@ -207,31 +207,82 @@ sellAgRate: 4
 
 L'app cible des particuliers lambda, pas uniquement des primo-accédants. Un cas très fréquent : revendre son bien actuel pour financer un nouvel achat. Cette feature doit rester invisible pour ceux qui n'en ont pas besoin.
 
-### Principe
+### Condition d'affichage
 
-Bloc collapsible **"🏠 J'ai un bien à revendre"** à insérer sur la page 2 (Financement), juste après le champ `apport`.
+Le bloc n'apparaît que si `_biens.length > 0`. Invisible sinon.
 
-Quand ouvert, 3 champs :
-- **Prix de vente estimé** (`salePrice`)
-- **Capital restant dû** (`saleCapLeft`) — 0 si crédit remboursé
-- **Frais d'agence à la revente (%)** (`saleAgRate`) — défaut : 4%
+### Principe (V1)
 
-Calcul affiché en temps réel :
+Bloc collapsible **"🏠 J'ai un bien à revendre"** sur la page 2 (Financement), juste après le champ `apport`.
+
+**Sélection du bien** : dropdown avec les biens enregistrés (nom saisi manuellement). Un seul bien sélectionnable.
+
+**Champs (lecture seule sauf frais agence) :**
+- **Prix de vente estimé** ← valeur actuelle estimée du bien sélectionné — lecture seule
+- **Capital restant dû** ← capital restant du crédit lié au bien — lecture seule
+  - Si aucun crédit lié : capital = 0 + warning ⚠ "Aucun crédit lié à ce bien — vérifiez que vous n'en avez pas oublié un"
+- **Frais d'agence revente (%)** — défaut 4%, éditable, appliqué sur le prix de vente
+- **Apport personnel** — le champ `apport` existant, conservé et additionné
+
+**Calcul live (lecture seule) :**
 ```
-apport net revente = prix vente − capital restant dû − (prix vente × frais agence)
+Apport net revente  = Prix vente − Capital restant dû − (Prix vente × frais agence %)
+Apport total        = Apport net revente + Apport personnel
 ```
+`Apport total` remplace `num('apport')` dans `calcBudget` / `calcProject` tant que le bloc est actif.
 
-Ce montant **remplace automatiquement** la valeur du champ `apport` dans tous les calculs (`calcBudget`, `calcProject`, etc.) tant que le bloc est activé.
+**Si apport net revente < 0** : warning rouge visible, valeur négative impactée sur le bilan final.
 
-### Implémentation
+**Désactivation** : retour au champ `apport` normal (= 0), sélection perdue.
 
-- Ajouter `salePrice`, `saleCapLeft`, `saleAgRate` dans `PFIELDS` et `DEFAULT_VALUES` (`saleAgRate: 4`)
-- Ajouter un boolean `useSaleProceeds` (checkbox/toggle) pour activer/désactiver le bloc
-- Modifier `calcBudget()` : si `useSaleProceeds` actif, calculer `saleNet` et l'utiliser comme apport à la place de `num('apport')`
-- Afficher `saleNet` calculé sous les 3 champs pour que l'utilisateur voie immédiatement son apport net
+### Étapes d'implémentation
 
-### Ce qu'on ne fait pas
+**Étape 1 — Structure des données** ✅
+- `_biens[i]` : `{ id, name, price, currentValue, creditId }` — `currentValue` peut être `null` → fallback sur `price` + message "veuillez renseigner la valeur actuelle"
+- Liaison bien↔crédit : `_credits.find(c => c.id === bien.creditId)` → `computeCredit(credit).crd`
 
-- Pas de calcul de plus-value immobilière (trop complexe, cas trop variables)
-- Pas de nouvelle page — juste un bloc collapsible
-- L'utilisateur sans bien à revendre ne voit rien de différent
+**Étape 2 — Ajouter `saleAgRate` dans `PFIELDS` et `DEFAULT_VALUES`** ✅
+- `saleAgRate: 4` dans `DEFAULT_VALUES`
+- Ajouté dans `PFIELDS` (champ de saisie DOM)
+
+**Étape 3 — Créer le bloc HTML collapsible** ✅
+- Bloc `#saleBlock` sur page-2 après le champ `apport`, CSS `.sale-block` / `.sale-toggle` / `.sale-readonly` / `.sale-result`
+
+**Étape 4 — Logique d'affichage conditionnel** ✅
+- `refreshSaleBlock()` : visible si `_biens.length > 0`, appelé dans `refresh()`
+- `toggleSaleBlock()` : ouvre/ferme, populate le select
+
+**Étape 5 — Lecture auto des données bien/crédit** ✅
+- `_refreshSaleData()` : lit `bien.currentValue` (fallback `price`), CRD via `computeCredit(credit).crd`
+- Warning si aucun crédit lié
+
+**Étape 6 — Calcul `apportTotal` en lecture seule** ✅
+- `saleNet = salePrice − crd − agFees`, `apportTotal = max(saleNet,0) + num('apport')`
+- Affiché dans `#saleNetDisplay` / `#saleTotalDisplay`
+
+**Étape 7 — Injecter dans `calcBudget` et `calcProject`** ✅
+- `getSaleApport()` retourne l'apport total quand le bloc est actif
+- `calcBudget()` : priorité `_simApport` > `getSaleApport()` > `num('apport')`
+- Ligne "Apport total (revente + personnel)" dans le bilan (page 6), visible seulement si actif
+- Curseur simulation apport (page 4) initialisé sur l'apport effectif
+
+**Étape 8 — Warning apport négatif + bilan final** ✅
+- `#saleNegativeWarning` affiché si `saleNet < 0`
+- `#resSaleApportLine` dans le bilan affiche `b.apport` quand revente active
+
+### Champ à ne pas confondre
+- Ajouter un boolean état JS `useSaleProceeds` + `selectedSaleBienIdx` (non persistés dans le profil)
+- Modifier `calcBudget()` et `calcProject()` : si `useSaleProceeds` actif, utiliser `apportTotal` calculé
+- Lire `prix vente` depuis `_biens[selectedSaleBienIdx].valeurActuelle` (ou champ équivalent)
+- Lire `capital restant dû` depuis le crédit lié (`_credits` filtré par `bienIdx`)
+
+### Ce qu'on ne fait pas (V1)
+
+- Pas de calcul de plus-value immobilière
+- Pas de sélection multi-biens (V2)
+- Pas de "cash à conserver" — l'utilisateur qui veut garder du cash ajuste son apport personnel (V2)
+
+### Améliorations futures (V2)
+
+- **Cash à conserver** : champ "Réserve de trésorerie (€)" = produit net − cash conservé = montant injecté
+- **Multi-biens** : sélectionner plusieurs biens à revendre, cumul des apports nets

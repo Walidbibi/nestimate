@@ -52,7 +52,9 @@ function calcBudget() {
   const borrow = lm * f;
   const insM = borrow * ir / 12;
 
-  const apport = (_simApport !== null) ? _simApport : num('apport');
+  const apport = (_simApport !== null) ? _simApport
+    : (typeof getSaleApport === 'function' && getSaleApport() !== null) ? getSaleApport()
+    : num('apport');
   const env = borrow + apport;
 
   const nr = pct('notaryRate');
