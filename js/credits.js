@@ -27,6 +27,7 @@ function _migrateLegacyCredit(c) {
     delete c.amount; delete c.rate; delete c.duration;
   }
   if (!c.lignes) c.lignes = [];
+  if (!c.mode) c.mode = 'avance';
   return c;
 }
 
@@ -92,9 +93,54 @@ function _computeLigne(ligne, globalK) {
            totalCostLigne: Math.max(n * lm - P, 0), active: lk < n, n, lk };
 }
 
+// ── Calcul mode simplifié ──────────────────────────────────────
+
+function _computeSimpleCredit(c) {
+  const lm      = parseFloat(c.simpleLm)          || 0;
+  const insM    = parseFloat(c.insuranceMonthly)   || 0;
+  const crdRef  = parseFloat(c.simpleCrd)          || 0;
+  const r       = (parseFloat(c.simpleRate) || 0) / 100 / 12;
+  const now     = new Date();
+
+  // Mois écoulés depuis la date de référence (quand l'utilisateur a saisi le CRD)
+  let k = 0;
+  if (c.simpleRefDate) {
+    const [ry, rm] = c.simpleRefDate.split('-').map(Number);
+    k = Math.max(0, (now.getFullYear() - ry) * 12 + (now.getMonth() + 1 - rm));
+  }
+
+  // CRD actuel = recalculé depuis le CRD de référence
+  let crd = crdRef;
+  if (k > 0) {
+    crd = r > 0
+      ? Math.max(crdRef * Math.pow(1 + r, k) - lm * (Math.pow(1 + r, k) - 1) / r, 0)
+      : Math.max(crdRef - lm * k, 0);
+  }
+
+  // Mois restants jusqu'à la date de fin
+  let n = 0;
+  if (c.simpleEndDate) {
+    const [ey, em] = c.simpleEndDate.split('-').map(Number);
+    n = Math.max(0, (ey - now.getFullYear()) * 12 + (em - (now.getMonth() + 1)));
+  }
+
+  const interestRemaining = Math.max(lm * n - crd, 0);
+
+  return {
+    lm, totM: lm + insM, crd,
+    paidCapital: 0, paidInterest: 0, paidTotal: 0,
+    totalCost: interestRemaining + insM * n,
+    totalAmount: crdRef,
+    interestRemaining,
+    pct: 0, k, n,
+    simple: true,
+  };
+}
+
 // ── Calcul consolidé d'un crédit ──────────────────────────────
 
 function computeCredit(c) {
+  if (c.mode === 'simple') return _computeSimpleCredit(c);
   const insM   = parseFloat(c.insuranceMonthly) || 0;
   const lignes = c.lignes || [];
 
@@ -139,8 +185,26 @@ function computeCredit(c) {
 
 // ── CRUD ───────────────────────────────────────────────────────
 
+let _pendingDeleteCreditId = null;
+
 function deleteCredit(id) {
-  if (!confirm('Supprimer ce crédit ?')) return;
+  const c = _credits.find(x => x.id === id);
+  if (!c) return;
+  _pendingDeleteCreditId = id;
+  const el = G('deleteCreditModalName');
+  if (el) el.textContent = '« ' + c.name + ' » sera définitivement supprimé.';
+  G('deleteCreditModal').style.display = 'flex';
+}
+
+function closeDeleteCreditModal() {
+  G('deleteCreditModal').style.display = 'none';
+  _pendingDeleteCreditId = null;
+}
+
+function confirmDeleteCreditAction() {
+  const id = _pendingDeleteCreditId;
+  closeDeleteCreditModal();
+  if (!id) return;
   _credits = _credits.filter(c => c.id !== id);
   saveCredits();
   renderCreditList();
@@ -272,23 +336,93 @@ function _renderLignes() {
   if (addBtn) addBtn.style.display = isImmo ? '' : 'none';
 }
 
+let _pendingSwitchMode = null;
+
+function _currentCreditFormMode() {
+  return G('cfModeSimpleBtn').classList.contains('active') ? 'simple' : 'avance';
+}
+
+function _creditFormHasData(mode) {
+  if (mode === 'simple') {
+    return !!(G('cfSimpleLm').value || G('cfSimpleRate').value ||
+              G('cfSimpleCrd').value || G('cfSimpleEndDate').value);
+  }
+  return _creditLignes.some(l => l.amount || l.rate || l.duration);
+}
+
+function _clearCreditFormMode(mode) {
+  if (mode === 'simple') {
+    G('cfSimpleLm').value      = '';
+    G('cfSimpleRate').value    = '';
+    G('cfSimpleCrd').value     = '';
+    G('cfSimpleEndDate').value = '';
+  } else {
+    _creditLignes = [{ id: _newLigneId(), name: '', amount: '', rate: '', duration: '', paliers: [] }];
+    _renderLignes();
+  }
+}
+
+function _applyCreditFormMode(mode) {
+  const simple = mode === 'simple';
+  G('cfSimpleSection').style.display = simple ? '' : 'none';
+  G('cfAvanceSection').style.display = simple ? 'none' : '';
+  G('cfModeSimpleBtn').classList.toggle('active', simple);
+  G('cfModeAvanceBtn').classList.toggle('active', !simple);
+}
+
+function setCreditFormMode(mode) {
+  const current = _currentCreditFormMode();
+  if (mode === current) return;
+  if (_creditFormHasData(current)) {
+    _pendingSwitchMode = mode;
+    G('switchCreditModeModal').style.display = 'flex';
+    return;
+  }
+  _applyCreditFormMode(mode);
+}
+
+function confirmSwitchCreditMode() {
+  const mode = _pendingSwitchMode;
+  G('switchCreditModeModal').style.display = 'none';
+  _pendingSwitchMode = null;
+  if (!mode) return;
+  _clearCreditFormMode(_currentCreditFormMode());
+  _applyCreditFormMode(mode);
+}
+
+function cancelSwitchCreditMode() {
+  G('switchCreditModeModal').style.display = 'none';
+  _pendingSwitchMode = null;
+}
+
 function openCreditForm(id) {
   _editingCreditId = id || null;
   const c = id ? _credits.find(x => x.id === id) : null;
+  const mode = c?.mode || 'simple';
 
   G('creditFormTitle').textContent = c ? 'Modifier le crédit' : 'Nouveau crédit';
-  G('cfName').value              = c?.name             || '';
-  G('cfType').value              = c?.type             || 'immo';
-  G('cfSubtype').value           = c?.subtype          || 'principale';
-  G('cfStartDate').value         = c?.startDate        || '';
-  G('cfInsurance').value         = c?.insuranceMonthly || 0;
-  G('cfLoyer').value             = c?.loyerPercu       || 0;
-  G('cfError').textContent       = '';
+  G('cfName').value        = c?.name             || '';
+  G('cfType').value        = c?.type             || 'immo';
+  G('cfSubtype').value     = c?.subtype          || 'principale';
+  G('cfInsurance').value   = c?.insuranceMonthly || 0;
+  G('cfLoyer').value       = c?.loyerPercu       || 0;
+  G('cfError').textContent = '';
 
+  // Mode simplifié
+  G('cfSimpleLm').value      = c?.simpleLm      || '';
+  G('cfSimpleRate').value    = c?.simpleRate     || '';
+  G('cfSimpleCrd').value     = c?.simpleCrd      || '';
+  G('cfSimpleEndDate').value = c?.simpleEndDate  || '';
+
+  // Mode avancé
+  G('cfStartDate').value = c?.startDate || '';
   _creditLignes = c?.lignes?.length
     ? c.lignes.map(l => ({ ...l, paliers: (l.paliers || []).map(p => ({...p})) }))
     : [{ id: _newLigneId(), name: '', amount: '', rate: '', duration: '', paliers: [] }];
 
+  G('cfModeSimpleBtn').onclick = () => setCreditFormMode('simple');
+  G('cfModeAvanceBtn').onclick = () => setCreditFormMode('avance');
+  setCreditFormMode(mode);
   updateCreditFormSubtype();
   _renderLignes();
   G('creditFormPopup').classList.add('open');
@@ -313,23 +447,48 @@ function saveCreditForm() {
   const name = G('cfName').value.trim();
   if (!name) { G('cfError').textContent = 'Le nom est requis.'; return; }
 
-  // Valider chaque ligne
-  for (let i = 0; i < _creditLignes.length; i++) {
-    const l = _creditLignes[i];
-    const a = parseFloat(l.amount), d = parseInt(l.duration);
-    if (!a || a <= 0) { G('cfError').textContent = `Ligne ${i+1} : montant requis.`; return; }
-    if (!d || d <= 0) { G('cfError').textContent = `Ligne ${i+1} : durée requise.`; return; }
-    // Taux 0 autorisé (PTZ)
+  const mode = G('cfModeSimpleBtn').classList.contains('active') ? 'simple' : 'avance';
+
+  if (mode === 'simple') {
+    const lm  = parseFloat(G('cfSimpleLm').value);
+    const crd = parseFloat(G('cfSimpleCrd').value);
+    const end = G('cfSimpleEndDate').value;
+    if (!lm  || lm  <= 0) { G('cfError').textContent = 'Mensualité requise.'; return; }
+    if (!crd || crd <= 0) { G('cfError').textContent = 'Capital restant dû requis.'; return; }
+    if (!end)              { G('cfError').textContent = 'Date de fin requise.'; return; }
+  } else {
+    for (let i = 0; i < _creditLignes.length; i++) {
+      const l = _creditLignes[i];
+      const a = parseFloat(l.amount), d = parseInt(l.duration);
+      if (!a || a <= 0) { G('cfError').textContent = `Ligne ${i+1} : montant requis.`; return; }
+      if (!d || d <= 0) { G('cfError').textContent = `Ligne ${i+1} : durée requise.`; return; }
+    }
   }
 
   const credit = {
     id:               _editingCreditId || ('cred_' + Date.now()),
     name,
+    mode,
     type:             G('cfType').value,
     subtype:          G('cfType').value === 'immo' ? G('cfSubtype').value : null,
-    startDate:        G('cfStartDate').value,
     insuranceMonthly: parseFloat(G('cfInsurance').value) || 0,
     loyerPercu:       parseFloat(G('cfLoyer').value)     || 0,
+    // Champs mode simplifié
+    simpleLm:      parseFloat(G('cfSimpleLm').value)      || 0,
+    simpleRate:    parseFloat(G('cfSimpleRate').value)     || 0,
+    simpleCrd:     parseFloat(G('cfSimpleCrd').value)      || 0,
+    simpleEndDate: G('cfSimpleEndDate').value              || '',
+    simpleRefDate: (() => {
+      const existing = _editingCreditId ? _credits.find(x => x.id === _editingCreditId) : null;
+      // On ne change la date de référence que si le CRD a été modifié
+      const newCrd = parseFloat(G('cfSimpleCrd').value) || 0;
+      const oldCrd = existing?.simpleCrd || 0;
+      if (existing?.simpleRefDate && newCrd === oldCrd) return existing.simpleRefDate;
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    })(),
+    // Champs mode avancé
+    startDate:     G('cfStartDate').value,
     lignes: _creditLignes.map((l, i) => ({
       id:        l.id,
       name:      l.name || ('Ligne ' + (i + 1)),
@@ -384,9 +543,10 @@ function renderCreditList() {
       : 'var(--warn)';
 
     const pctBar = Math.round(m.pct * 100);
+    const isSimple = c.mode === 'simple';
 
-    // Détail par ligne (affiché si > 1 ligne)
-    const lignesDetail = c.lignes.length > 1
+    // Détail par ligne (mode avancé, > 1 ligne)
+    const lignesDetail = !isSimple && (c.lignes || []).length > 1
       ? `<div class="credit-lignes-detail">
           ${c.lignes.map(l => {
             const ll = _computeLigne(l, m.k);
@@ -404,7 +564,7 @@ function renderCreditList() {
         <div>
           <div class="credit-name">${escHtml(c.name)}</div>
           <span class="credit-type-badge" style="color:${typeColor};border-color:${typeColor}55;background:${typeColor}12;">${typeLabel}</span>
-          ${c.lignes.length > 1 ? `<span class="credit-type-badge" style="color:var(--muted);border-color:var(--border);background:var(--surface-2);margin-left:4px;">${c.lignes.length} lignes</span>` : ''}
+          ${(c.lignes || []).length > 1 ? `<span class="credit-type-badge" style="color:var(--muted);border-color:var(--border);background:var(--surface-2);margin-left:4px;">${c.lignes.length} lignes</span>` : ''}
         </div>
         <div class="credit-actions">
           <button class="pli-btn" onclick="openCreditForm('${c.id}')" title="Modifier">✏</button>
@@ -418,10 +578,14 @@ function renderCreditList() {
         <span style="color:var(--success);font-weight:700;">${euro(c.loyerPercu)}/mois</span>
         <span style="color:var(--muted);font-size:.75rem;">Effort mensuel net : ${euro(Math.max(m.totM - c.loyerPercu, 0))}/mois</span>
       </div>` : ''}
+      ${isSimple ? '' : `
       <div class="credit-progress-wrap">
         <div class="credit-progress-bar" style="width:${pctBar}%"></div>
-      </div>
-      <div class="credit-progress-label">${pctBar}% remboursé · mensualité ${m.k} / ${m.n}</div>
+      </div>`}
+      <div class="credit-progress-label">${isSimple
+        ? `${m.n} mois restants · échéance ${c.simpleEndDate ? c.simpleEndDate.split('-').reverse().join('/') : '—'}`
+        : `${pctBar}% remboursé · mensualité ${m.k} / ${m.n}`
+      }</div>
       <div class="credit-metrics">
         <div class="credit-metric">
           <div class="cm-label">Mensualité totale</div>
@@ -431,6 +595,15 @@ function renderCreditList() {
           <div class="cm-label">Capital restant</div>
           <div class="cm-value">${euro(m.crd)}</div>
         </div>
+        ${isSimple ? `
+        <div class="credit-metric">
+          <div class="cm-label">Taux nominal</div>
+          <div class="cm-value">${parseFloat(c.simpleRate || 0).toFixed(2)}%</div>
+        </div>
+        <div class="credit-metric">
+          <div class="cm-label">Intérêts restants</div>
+          <div class="cm-value cm-warn">${euro(m.interestRemaining)}</div>
+        </div>` : `
         <div class="credit-metric">
           <div class="cm-label">Déjà remboursé</div>
           <div class="cm-value">${euro(m.paidTotal)}</div>
@@ -438,7 +611,7 @@ function renderCreditList() {
         <div class="credit-metric">
           <div class="cm-label">Coût total crédit</div>
           <div class="cm-value cm-warn">${euro(m.totalCost)}</div>
-        </div>
+        </div>`}
       </div>
     </div>`;
   }).join('');
