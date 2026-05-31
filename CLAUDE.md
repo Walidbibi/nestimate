@@ -3,6 +3,46 @@
 Simulateur immobilier français — app statique (zéro build, zéro npm).
 Lancer : `python3 -m http.server 3000` depuis la racine.
 
+---
+
+## Audit — Gestion des crédits (branche `feature/credit`)
+
+### Bugs (priorité haute)
+
+**1. ~~Crash `c.lignes` undefined en mode simplifié~~** ✅ résolu
+- `c.lignes.length > 1` → `(c.lignes || []).length > 1` dans `renderCreditList()`
+- Risque si vieux localStorage sans migration correcte
+
+**2. ~~Suppression crédit via `confirm()` natif~~** ✅ résolu
+- Modal `deleteCreditModal` créée, même pattern que `deleteProfileModal`
+
+**3. Format date de fin incorrect en mode simplifié** *(à faire)*
+- `c.simpleEndDate.replace('-', '/')` → `2048-11` donne `2048/11` au lieu de `11/2048`
+- Fix : `c.simpleEndDate.split('-').reverse().join('/')`
+
+### Problème critique d'architecture
+
+**4. Les crédits n'alimentent pas le calcul budget** *(à faire)*
+- `debtCharges()` dans `calc.js` lit `num('currentCredits')` (champ manuel page 2)
+- Les crédits saisis dans "Mes Crédits" n'affectent PAS le taux d'endettement
+- L'utilisateur doit recopier manuellement le total dans le champ Charges
+- Solution : `debtCharges()` doit lire `_credits` directement OU auto-remplir `currentCredits`
+
+### UX manquante
+
+**5. ~~Métriques incohérentes en mode simplifié~~** ✅ résolu
+- Barre de progression masquée en mode simple
+- "Déjà remboursé" et "Coût total" remplacés par "Taux nominal" + "Intérêts restants"
+- CRD se recalcule automatiquement chaque mois depuis `simpleRefDate` (date de saisie)
+- `simpleRefDate` auto-set au save, conservé si CRD inchangé à la modification
+
+**6. ~~Pas de warning avant switch mode Simplifié ↔ Avancé~~** ✅ résolu
+- Modal de confirmation avec "Annuler" / "Changer et effacer"
+- Si formulaire vide → switch sans friction
+- Assurance mensuelle partagée entre les deux modes (intentionnel)
+
+---
+
 ## Structure des fichiers
 
 | Fichier | Rôle |
