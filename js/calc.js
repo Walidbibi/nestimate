@@ -269,7 +269,8 @@ function calcTAEG() {
   }
   const rM = (lo + hi) / 2;
   const taeg = (Math.pow(1 + rM, 12) - 1) * 100;
-  const insAnnual = num('insuranceRate') + (hasCo ? num('insuranceRate2') : 0);
+  // Taux d'assurance effectif sur le capital, pondéré par les quotités (même calcul que la mensualité)
+  const insAnnual = insRate() * 100;
   const feesAnnual = fees / b.borrow / num('duration') * 100;
 
   return { taeg, rateNom: num('rate'), insAnnual, feesAnnual };
@@ -297,7 +298,8 @@ function calcTAEGProject() {
   }
   const rM = (lo + hi) / 2;
   const taeg = (Math.pow(1 + rM, 12) - 1) * 100;
-  const insAnnual = num('insuranceRate') + (hasCo ? num('insuranceRate2') : 0);
+  // Taux d'assurance effectif sur le capital, pondéré par les quotités (même calcul que la mensualité)
+  const insAnnual = insRate() * 100;
   const feesAnnual = fees / P / num('duration') * 100;
 
   return { taeg, rateNom: num('rate'), insAnnual, feesAnnual };

@@ -379,6 +379,9 @@ function _updateBienSummary() {
 function initBiens() {
   loadBiens();
   renderBienList();
+  // main.js a déjà rafraîchi l'accueil avant le chargement des biens → recalcul
+  // (carte « Mes biens », bloc revente, crédit du bien revendu)
+  if (typeof refresh === 'function') refresh();
 }
 
 initBiens();

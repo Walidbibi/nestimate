@@ -32,6 +32,12 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 - `getSaleApport()` ne clampe plus `saleNet` à 0 : un produit net négatif est déduit de l'apport personnel, l'apport total peut être négatif
 - Warning `#saleNegativeWarning` chiffré ; curseur apport (page 4) accepte un min négatif
 
+**13. ~~Assurance affichée dans le détail TAEG sans quotité~~** ✅ résolu
+- `insAnnual` (calcTAEG / calcTAEGProject) = `insRate() * 100` au lieu de la somme brute des taux (2 × 0,30 % à 50 % affichait 0,60 %). Affichage seul : le TAEG lui-même était déjà juste
+
+**14. ~~Carte « Mes biens » vide au chargement~~** ✅ résolu
+- `biens.js` est chargé après le premier `refresh()` de main.js → `initBiens()` relance `refresh()` (carte accueil, bloc revente)
+
 ### Points ouverts (identifiés après les fixes #4 et #7)
 
 **8. Revente à perte = dossier probablement refusé, mais pas signalé** *(à faire)*
@@ -57,6 +63,10 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 - Les profils existants gardent `rentPct = 90` (seul le défaut a changé à 70)
 - Curseur apport (page 4) : pas de 1000 € → la position arrondit l'apport (préexistant, texte exact)
 
+**15. Carte « Mes biens » : prix d'achat au lieu de la valeur actuelle** *(à faire)*
+- `refreshHome()` (ui.js) additionne `b.price` (prix d'achat) pour le résumé de la carte
+- Pour un propriétaire, la valeur actuelle estimée (`b.currentValue`, fallback `price`) est plus parlante — même règle que le bloc revente
+
 ### UX manquante
 
 **5. ~~Métriques incohérentes en mode simplifié~~** ✅ résolu
@@ -69,6 +79,28 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 - Modal de confirmation avec "Annuler" / "Changer et effacer"
 - Si formulaire vide → switch sans friction
 - Assurance mensuelle partagée entre les deux modes (intentionnel)
+
+---
+
+## V2 — Agents projet (`.claude/agents/`)
+
+Le site actuel est un **POC**. La V2 ajoute des comptes utilisateurs et la persistance des données en base (stack à choisir).
+
+**Pourquoi la V2 (décision porteur, 25/11/2026)** :
+1. **Multi-appareils** : retrouver ses données (profils, crédits, biens) sur tous ses appareils sans tout retaper
+2. **Ouvert à l'entourage** : des connaissances utilisent l'app pour LEUR propre projet, chacun avec son compte et ses données. **Pas de partage de données entre utilisateurs** (ni simulation partagée, ni projet commun)
+3. **Pas de commercialisation** à date → coût d'hébergement ~0, pas de paiement, pas de mise en relation banque/courtier
+
+Hors périmètre tant que ces objectifs ne changent pas : monétisation, analytics poussés, back-office.
+
+| Agent | Rôle |
+|---|---|
+| `po` | Product Owner : cadrage, user stories, priorisation, RGPD et réglementaire. Specs dans `docs/v2/` |
+| `ux-ui` | Parcours, wireframes, audit (Playwright), glossaire, accessibilité. Livrables dans `docs/v2/ux/` |
+| `persona-primo` | Primo-accédant novice, sans jargon. Seul, couple, concubins ou amis |
+| `persona-proprietaire` | Déjà propriétaire, averti. Seul, couple, famille recomposée ou SCI |
+
+Les personas sont des **simulations** : elles génèrent des hypothèses, pas une validation utilisateur.
 
 ---
 
