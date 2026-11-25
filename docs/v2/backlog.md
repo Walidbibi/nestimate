@@ -12,9 +12,9 @@
 | V2-02b | Mot de passe oublié | Must | Sans ça, un oubli = données perdues |
 | V2-03 | Sauvegarde automatique dans le compte **[RGPD]** | Must | Cœur de O1 |
 | V2-04 | Première connexion : reprendre mes données locales | Must | O4 : les utilisateurs actuels ont déjà des données |
-| V2-05 | Ordinateur partagé : ne jamais récupérer les données d'un autre compte | Must | O2 : risque de fuite de données financières |
+| V2-05 | Ne jamais mélanger les données de deux comptes | Must | Effacement local à la déconnexion + import confirmé |
 | V2-06 | Retrouver mes données sur un autre appareil | Must | Cœur de O1 |
-| V2-07 | Conflit entre deux appareils | Must | Sans cette story, perte silencieuse de saisie (risque n°1) |
+| V2-07 | Modifications sur deux appareils | Must | Dernière sauvegarde gagne + rechargement au démarrage |
 | V2-08 | Se déconnecter | Must | Ordinateur partagé, O2 |
 | V2-09 | Supprimer mon compte | Must | Droit à l'effacement, minimum RGPD |
 | V2-10 | Savoir ce qui est stocké et où **[RGPD]** | Must | Obligation d'information. Coût faible (une page statique) |
@@ -23,11 +23,11 @@
 | V2-13 | Exporter mes données (JSON) | Should | Droit à la portabilité, et sauvegarde personnelle. Coût faible car les blobs existent déjà |
 | V2-15 | Purge automatique des comptes inactifs | Could | Une purge manuelle suffit à quelques dizaines de comptes. La durée reste à décider |
 | — | Partage d'un projet entre comptes | Won't | Exclu par le cadrage |
-| — | Fusion automatique des conflits | Won't | Coûteux. Le choix explicite (V2-07) suffit |
+| — | Fusion automatique ou écran de choix de version | Won't | Dernière sauvegarde gagne au MVP (V2-07) |
 | — | Lien magique, OAuth Google/Apple, historique des versions, analytics | Won't | Hors besoin, ou contraire à la minimisation des données |
 | — | Synchro du thème et du mode expert | Won't | Préférences propres à l'appareil |
 
-**Découpe livrable minimale** : V2-01, 02, 03, 06, 08, 11, puis 04, 05, 07, 09, 10. Aucune ouverture aux connaissances avant que les 11 Must soient faits : V2-05, 07 et 09 protègent leurs données.
+**Découpe livrable minimale** : V2-01, 02, 03, 06, 08, 11, puis 04, 05, 07, 09, 10. Aucune ouverture aux connaissances avant que les 11 Must soient faits : V2-05 et 09 protègent leurs données.
 
 ---
 
@@ -69,11 +69,10 @@ En tant qu'**utilisateur V1 qui a déjà tout saisi sur cet appareil**, je veux 
 - **Given** des données à l'ancien format `nestimate_v2` **When** l'import a lieu **Then** il s'effectue après la migration V1 existante, sans perte de champ.
 - **Cas limite** : profils de foyers différents dans la même liste (point #10). Ils sont importés tels quels ; les crédits et les biens restent communs au compte.
 
-### V2-05 Ordinateur partagé : ne jamais récupérer les données d'un autre compte
-En tant qu'**utilisateur sur l'ordinateur d'un proche**, je veux que mes données ne se mélangent jamais avec celles d'une autre personne, afin de protéger mes informations financières et les siennes.
-- **Given** les données locales appartiennent au compte A (marqueur local) **When** je me connecte avec le compte B **Then** elles ne sont **pas** proposées à l'import : elles sont effacées et remplacées par celles de B.
-- **Given** les données locales sont anonymes (saisies par quelqu'un d'autre sans compte) **When** je me connecte **Then** l'écran de V2-04 s'affiche avec le résumé, pour que je reconnaisse ou non ces données. Rien n'est importé sans mon clic.
-- **Given** la session de A a expiré et ses données sont encore en local **When** quelqu'un ouvre l'app **Then** les données de A ne s'affichent pas. L'app propose « Se reconnecter » ou « Continuer sans compte », ce qui efface les données locales de A.
+### V2-05 Ne jamais mélanger les données de deux comptes
+En tant qu'**utilisateur**, je veux que mes données ne se mélangent jamais avec celles d'une autre personne sur le même appareil.
+- **Given** je me déconnecte **When** la déconnexion aboutit **Then** les données locales sont effacées (V2-08) : le suivant repart de zéro.
+- **Given** des données anonymes existent en local **When** je me connecte **Then** l'import n'a lieu qu'après confirmation (V2-04).
 
 ### V2-06 Retrouver mes données sur un autre appareil
 En tant que **propriétaire avec plusieurs crédits saisis en mode avancé**, je veux retrouver profils, crédits et biens sur mon téléphone, afin de ne pas ressaisir ce qui m'a pris du temps.
@@ -81,12 +80,11 @@ En tant que **propriétaire avec plusieurs crédits saisis en mode avancé**, je
 - **Given** je suis connecté sur deux appareils **When** je modifie sur A puis j'ouvre l'app (ou je reviens sur l'onglet) sur B, sans modification locale en attente sur B **Then** B affiche la version de A sans question.
 - **Cas limite** : un crédit ancien sans `lignes`, un bien avec `currentValue = null`. Ils s'affichent sans erreur (mêmes garde-fous qu'en V1).
 
-### V2-07 Conflit entre deux appareils
-En tant qu'**utilisateur qui a modifié ses données sur deux appareils**, je veux choisir la version à garder, afin de ne jamais perdre une saisie sans le savoir.
-- **Given** B a des modifications non envoyées, alors que le compte a été modifié depuis A depuis la dernière synchro de B **When** B tente d'envoyer **Then** rien n'est écrasé. Une fenêtre indique « Vos données ont été modifiées sur un autre appareil le <date heure> ». Je choisis entre « Utiliser la version du compte » et « Garder celle de cet appareil ».
-- **Given** je choisis une version **When** je confirme **Then** l'autre est remplacée, et la fenêtre précise ce qui sera perdu.
-- **Given** B est hors ligne et modifie ses données **When** il revient en ligne **Then** la même règle s'applique.
-- Règle : la détection porte sur **l'ensemble des 3 jeux de données** (une seule version), pas sur chaque champ.
+### V2-07 Modifications sur deux appareils
+En tant qu'**utilisateur qui utilise plusieurs appareils**, je veux que ma dernière sauvegarde soit celle retenue.
+- Règle MVP : **la dernière sauvegarde gagne** (sur l'ensemble des 3 jeux de données).
+- **Given** j'ouvre l'app sur un appareil **When** elle démarre ou reprend le focus **Then** elle recharge la version du compte avant toute saisie, pour limiter les écrasements.
+- Pas d'écran de choix de version au MVP. À reconsidérer seulement si des pertes de saisie sont constatées.
 
 ### V2-08 Se déconnecter
 En tant qu'**utilisateur sur un ordinateur partagé**, je veux me déconnecter, afin que la personne suivante ne voie pas mes revenus ni mes crédits.
@@ -98,7 +96,7 @@ En tant qu'**utilisateur sur un ordinateur partagé**, je veux me déconnecter, 
 En tant qu'**utilisateur qui a fini son projet**, je veux supprimer mon compte et toutes mes données, afin qu'il ne reste rien de mes informations financières.
 - **Given** je suis connecté **When** je demande la suppression **Then** une confirmation explicite m'indique ce qui sera supprimé (email, profils, crédits, biens), de façon irréversible.
 - **Given** je confirme **When** la suppression aboutit **Then** le compte et toutes ses données sont supprimés du serveur, les données locales de cet appareil sont effacées, et un message confirme la suppression.
-- **Given** j'étais aussi connecté sur un autre appareil **When** je l'ouvre ensuite **Then** la session est invalide et les données locales de ce compte sont effacées (V2-05).
+- **Given** j'étais aussi connecté sur un autre appareil **When** je l'ouvre ensuite **Then** la session est invalide et les données locales de ce compte sont effacées.
 - **Given** la suppression échoue **When** l'erreur survient **Then** rien n'est effacé en local et un message m'invite à réessayer.
 - Note : la suppression du compte d'authentification exige un traitement côté serveur (droits élevés).
 

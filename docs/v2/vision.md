@@ -91,9 +91,9 @@ Points à connaître si Supabase est retenu :
 
 | Risque | Impact | Mitigation MVP |
 |---|---|---|
-| **Conflit multi-appareils** : modifications sur A et B, puis écrasement | Perte silencieuse de saisie | Version serveur comparée à la version locale de base. En cas d'écart, l'utilisateur choisit : jamais d'écrasement silencieux (V2-07) |
+| **Conflit multi-appareils** : modifications sur A et B, puis écrasement | Perte silencieuse de saisie | MVP : dernière sauvegarde gagne + rechargement au démarrage (V2-07). Risque accepté, réévalué si pertes constatées |
 | **Migration localStorage** : formats hétérogènes (`nestimate_v2` ancien, crédits sans `lignes`, `rentPct = 90`) | Import qui plante ou données altérées | Import du JSON tel quel, après la migration V1 existante (`load()`). Aucune transformation à l'import. Test sur des jeux de données V1 réels |
-| **Ordinateur partagé** : données d'un autre (compte ou anonyme) importées dans mon compte | Fuite de données d'un tiers dans mon compte | Marqueur local du compte propriétaire. Pas d'import automatique : confirmation explicite (V2-04, V2-05) |
+| **Ordinateur partagé** : données d'un autre (compte ou anonyme) importées dans mon compte | Fuite de données d'un tiers dans mon compte | Effacement local à la déconnexion. Import des données anonymes sur confirmation (V2-04, V2-05) |
 | **Données financières sensibles** (revenus, crédits, patrimoine, foyer) | Fuite = préjudice fort | RLS obligatoire, test d'isolation, minimisation (email + blobs uniquement) |
 | **RGPD** même sans commercialisation | Non-conformité | Information, suppression, hébergement UE, durée de conservation. Base légale et statut du porteur à valider par un juriste |
 | Pause du projet gratuit, quota email | Connexion impossible | Mode local toujours fonctionnel, message clair en cas d'échec de synchro (V2-09) |
