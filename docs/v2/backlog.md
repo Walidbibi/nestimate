@@ -65,6 +65,7 @@ En tant qu'**utilisateur connecté**, je veux que mes modifications soient enreg
 En tant qu'**utilisateur V1 qui a déjà tout saisi sur cet appareil**, je veux que mes données rejoignent mon compte, afin de ne pas tout retaper.
 - **Given** j'ai des données anonymes sur cet appareil et mon compte est vide **When** je me connecte **Then** un écran résume ce qui est trouvé (« 2 profils, 3 crédits, 1 bien ») et propose « Enregistrer dans mon compte » ou « Ne pas importer ».
 - **Given** j'ai des données anonymes et mon compte contient déjà des données **When** je me connecte **Then** je choisis entre « Garder les données du compte » (les données locales sont remplacées) et « Remplacer le compte par les données de cet appareil ». Aucune option n'est présélectionnée et il n'y a pas de fusion.
+- **Given** j'ai choisi « Ne pas importer » **When** je confirme **Then** les données locales sont retirées de l'appareil (le compte se charge à la place). Un lien « Les télécharger d'abord » (V2-13) est proposé avant. *(Décision porteur, 25/11/2026)*
 - **Given** il n'y a aucune donnée locale **When** je me connecte **Then** les données du compte sont chargées sans question.
 - **Given** des données à l'ancien format `nestimate_v2` **When** l'import a lieu **Then** il s'effectue après la migration V1 existante, sans perte de champ.
 - **Cas limite** : profils de foyers différents dans la même liste (point #10). Ils sont importés tels quels ; les crédits et les biens restent communs au compte.
