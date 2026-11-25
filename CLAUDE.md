@@ -32,6 +32,12 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 - `getSaleApport()` ne clampe plus `saleNet` à 0 : un produit net négatif est déduit de l'apport personnel, l'apport total peut être négatif
 - Warning `#saleNegativeWarning` chiffré ; curseur apport (page 4) accepte un min négatif
 
+**13. ~~Assurance affichée dans le détail TAEG sans quotité~~** ✅ résolu
+- `insAnnual` (calcTAEG / calcTAEGProject) = `insRate() * 100` au lieu de la somme brute des taux (2 × 0,30 % à 50 % affichait 0,60 %). Affichage seul : le TAEG lui-même était déjà juste
+
+**14. ~~Carte « Mes biens » vide au chargement~~** ✅ résolu
+- `biens.js` est chargé après le premier `refresh()` de main.js → `initBiens()` relance `refresh()` (carte accueil, bloc revente)
+
 ### Points ouverts (identifiés après les fixes #4 et #7)
 
 **8. Revente à perte = dossier probablement refusé, mais pas signalé** *(à faire)*
