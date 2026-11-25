@@ -78,7 +78,7 @@ Le site actuel est un **POC**. La V2 ajoute des comptes utilisateurs et la persi
 
 **Pourquoi la V2 (décision porteur, 25/11/2026)** :
 1. **Multi-appareils** : retrouver ses données (profils, crédits, biens) sur tous ses appareils sans tout retaper
-2. **Partage avec des connaissances** : usage par l'entourage (sens exact à préciser : chacun son compte, ou partage d'une simulation ?)
+2. **Ouvert à l'entourage** : des connaissances utilisent l'app pour LEUR propre projet, chacun avec son compte et ses données. **Pas de partage de données entre utilisateurs** (ni simulation partagée, ni projet commun)
 3. **Pas de commercialisation** à date → coût d'hébergement ~0, pas de paiement, pas de mise en relation banque/courtier
 
 Hors périmètre tant que ces objectifs ne changent pas : monétisation, analytics poussés, back-office.
