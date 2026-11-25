@@ -76,6 +76,13 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 
 Le site actuel est un **POC**. La V2 ajoute des comptes utilisateurs et la persistance des données en base (stack à choisir).
 
+**Pourquoi la V2 (décision porteur, 25/11/2026)** :
+1. **Multi-appareils** : retrouver ses données (profils, crédits, biens) sur tous ses appareils sans tout retaper
+2. **Partage avec des connaissances** : usage par l'entourage (sens exact à préciser : chacun son compte, ou partage d'une simulation ?)
+3. **Pas de commercialisation** à date → coût d'hébergement ~0, pas de paiement, pas de mise en relation banque/courtier
+
+Hors périmètre tant que ces objectifs ne changent pas : monétisation, analytics poussés, back-office.
+
 | Agent | Rôle |
 |---|---|
 | `po` | Product Owner : cadrage, user stories, priorisation, RGPD et réglementaire. Specs dans `docs/v2/` |
