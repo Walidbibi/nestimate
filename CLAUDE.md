@@ -16,17 +16,46 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 **2. ~~Suppression crédit via `confirm()` natif~~** ✅ résolu
 - Modal `deleteCreditModal` créée, même pattern que `deleteProfileModal`
 
-**3. Format date de fin incorrect en mode simplifié** *(à faire)*
-- `c.simpleEndDate.replace('-', '/')` → `2048-11` donne `2048/11` au lieu de `11/2048`
-- Fix : `c.simpleEndDate.split('-').reverse().join('/')`
+**3. ~~Format date de fin incorrect en mode simplifié~~** ✅ résolu
+- `c.simpleEndDate.split('-').reverse().join('/')` dans `renderCreditList()`
 
 ### Problème critique d'architecture
 
-**4. Les crédits n'alimentent pas le calcul budget** *(à faire)*
-- `debtCharges()` dans `calc.js` lit `num('currentCredits')` (champ manuel page 2)
-- Les crédits saisis dans "Mes Crédits" n'affectent PAS le taux d'endettement
-- L'utilisateur doit recopier manuellement le total dans le champ Charges
-- Solution : `debtCharges()` doit lire `_credits` directement OU auto-remplir `currentCredits`
+**4. ~~Les crédits n'alimentent pas le calcul budget~~** ✅ résolu
+- `creditsMonthly()` (calc.js) : somme des `totM` de `_credits`, hors crédits soldés et hors crédit du bien revendu (`getSoldCreditId()`, main.js)
+- `debtCharges()` : `creditsMonthly()` si au moins un crédit existe, sinon fallback sur le champ manuel `currentCredits`
+- Page Charges : le champ manuel est masqué et remplacé par le total calculé (`refreshCreditsField()`, ui.js)
+- `creditsRentIncome()` (calc.js) : `loyerPercu` des crédits locatifs ajoutés aux revenus × `rentPct` (méthode HCSF classique). Le loyer d'un crédit soldé reste compté, celui du bien revendu non. `rentIncome` = loyers des biens SANS crédit uniquement (hint en page 0)
+- `rentPct` par défaut : 70 (pratique bancaire courante), et non plus 90
+
+**7. ~~Revente à perte masquée~~** ✅ résolu
+- `getSaleApport()` ne clampe plus `saleNet` à 0 : un produit net négatif est déduit de l'apport personnel, l'apport total peut être négatif
+- Warning `#saleNegativeWarning` chiffré ; curseur apport (page 4) accepte un min négatif
+
+### Points ouverts (identifiés après les fixes #4 et #7)
+
+**8. Revente à perte = dossier probablement refusé, mais pas signalé** *(à faire)*
+- Si `getSaleApport() < 0`, le budget est réduit mais le badge dossier ne bascule pas
+- Réalité bancaire : le CRD doit être soldé à la vente (mainlevée) → la banque refusera vraisemblablement le nouveau prêt
+- Piste : forcer `badge-refuse` (ou `badge-fragile` + message explicite) quand l'apport total est négatif
+
+**9. Double comptage possible des loyers (données existantes)** *(à faire)*
+- Un utilisateur qui avait recopié ses loyers dans `rentIncome` ET saisi `loyerPercu` sur ses crédits locatifs est compté deux fois
+- Aujourd'hui seul le hint `#rentFromCredits` (page 0) le prévient
+- Piste : détecter `rentIncome ≈ creditsRentIncome()` et afficher un warning — risque de faux positif
+
+**10. Crédits globaux, non rattachés au profil** *(à décider)*
+- `_credits` (clé `nestimate_credits`) est partagé par tous les profils, alors que les champs du profil sont par profil
+- OK si les profils = scénarios d'un même foyer ; faux si profils = foyers différents
+
+**11. Revente non persistée** *(à faire)*
+- `_saleOpen` / `saleBienId` ne sont pas sauvegardés : après reload, le bien revendu, son crédit et son loyer reviennent dans le calcul
+- Cohérent avec l'apport (qui revient aussi au champ manuel), mais fragile
+
+**12. Changement de comportement pour les anciennes données** *(info)*
+- Dès qu'un crédit existe dans "Mes Crédits", le champ manuel `currentCredits` est ignoré (source unique)
+- Les profils existants gardent `rentPct = 90` (seul le défaut a changé à 70)
+- Curseur apport (page 4) : pas de 1000 € → la position arrondit l'apport (préexistant, texte exact)
 
 ### UX manquante
 
@@ -145,7 +174,7 @@ Analyse réalisée en simulant le parcours d'un primo-accédant (CDI, conjoint, 
 
 ### Bugs réels (priorité haute)
 
-**1. ~~`rentPct` valeur par défaut incohérente~~** ✅ résolu — `DEFAULT_VALUES.rentPct = 90`
+**1. ~~`rentPct` valeur par défaut incohérente~~** ✅ résolu — `DEFAULT_VALUES.rentPct = 70` (corrigé de 90 → 70)
 
 **2. ~~Frais de garantie calculés sur le mauvais capital~~** ✅ résolu — résolution algébrique dans `calcProject` et `calcRvb` (`guarantee = financed * gr`)
 
@@ -217,7 +246,7 @@ guaranteeRate: 1     // cautionnement type Crédit Logement
 insuranceRate: 0.36  // taux moyen marché
 quotite1: 100        // emprunteur seul = 100%
 brokerPct: 1         // si courtier activé
-rentPct: 90          // taux retenu standard banques
+rentPct: 70          // taux retenu standard banques (parfois 80)
 // RvB
 appRate: 1.5
 savRate: 3

@@ -331,11 +331,12 @@
           <label for="rentIncome">Revenus locatifs mensuels (CC)</label>
           <input id="rentIncome" type="number" value="0" min="0" step="50" inputmode="decimal">
           <div class="hint">Loyer charges comprises.</div>
+          <div class="hint credits-rent-hint" id="rentFromCredits" style="display:none;"></div>
         </div>
         <div class="field">
           <label for="rentPct">% retenu sur le locatif</label>
-          <input id="rentPct" type="number" value="0" min="0" max="100" step="1" inputmode="decimal">
-          <div class="hint">90% par défaut.</div>
+          <input id="rentPct" type="number" value="70" min="0" max="100" step="1" inputmode="decimal">
+          <div class="hint">70% par défaut (pratique bancaire courante, parfois 80%).</div>
         </div>
         <div class="field">
           <label for="otherIncome">Autres revenus retenus (mensuels)</label>
@@ -361,7 +362,11 @@
         <div class="field">
           <label for="currentCredits">Crédits en cours (mensualités cumulées)</label>
           <input id="currentCredits" type="number" value="0" min="0" step="10" inputmode="decimal">
-          <div class="hint">Auto, conso, LOA, revolving…</div>
+          <div class="hint" id="currentCreditsHint">Auto, conso, LOA, revolving… Ou saisissez-les dans <a href="#" onclick="goTo('credits');return false;">Mes Crédits</a>.</div>
+          <div id="currentCreditsAuto" class="credits-auto" style="display:none;">
+            <div class="credits-auto-value" id="currentCreditsAutoValue">0 €/mois</div>
+            <div class="hint" id="currentCreditsAutoHint"></div>
+          </div>
         </div>
         <div class="field">
           <label for="alimonyPaid">Pensions alimentaires versées</label>
@@ -457,7 +462,7 @@
                 <strong class="mono" id="saleTotalDisplay">—</strong>
               </div>
               <div id="saleNegativeWarning" class="hint warn-hint" style="display:none">
-                ⚠ Apport net négatif — le capital restant dépasse le prix de vente.
+                ⚠ Vente à perte — le capital restant et les frais dépassent le prix de vente.
               </div>
             </div>
           </div>

@@ -394,7 +394,8 @@ function initSimApport() {
   const maxVal = Math.ceil(Math.max(profileAp * 2.5, 150000) / 10000) * 10000;
   const sl = G('simApport');
   if (!sl) return;
-  sl.min = 0; sl.max = maxVal; sl.value = profileAp;
+  // Apport négatif possible (vente à perte) → le curseur doit pouvoir le représenter
+  sl.min = Math.min(0, Math.floor(profileAp / 1000) * 1000); sl.max = maxVal; sl.value = profileAp;
   G('simApportVal').textContent = euro(profileAp);
   G('simApportMax').textContent = euro(maxVal);
   G('simModBadge').style.display = 'none';
@@ -988,7 +989,39 @@ function refreshComparison() {
 
 // ── Refresh principal ─────────────────────────────────────────
 
+// Page Charges : si des crédits existent dans "Mes Crédits", le champ manuel
+// est remplacé par le total calculé (source unique, pas de double saisie).
+function refreshCreditsField() {
+  const input = G('currentCredits');
+  const auto  = G('currentCreditsAuto');
+  if (!input || !auto) return;
+  const cm = typeof creditsMonthly === 'function' ? creditsMonthly() : null;
+  const isAuto = cm !== null;
+  input.style.display = isAuto ? 'none' : '';
+  G('currentCreditsHint').style.display = isAuto ? 'none' : '';
+  auto.style.display = isAuto ? '' : 'none';
+  if (!isAuto) return;
+  G('currentCreditsAutoValue').textContent = euro(cm) + '/mois';
+  const n = _credits.length;
+  const soldId = typeof getSoldCreditId === 'function' ? getSoldCreditId() : null;
+  const sold = soldId ? _credits.find(c => c.id === soldId) : null;
+  G('currentCreditsAutoHint').innerHTML =
+    `Calculé depuis <a href="#" onclick="goTo('credits');return false;">Mes Crédits</a> (${n} crédit${n > 1 ? 's' : ''}, assurance incluse, crédits soldés exclus).`
+    + (sold ? `<br>« ${escHtml(sold.name)} » exclu : remboursé par la revente.` : '');
+}
+
+// Page Revenus : signale les loyers déjà repris depuis "Mes Crédits"
+function refreshRentField() {
+  const el = G('rentFromCredits');
+  if (!el) return;
+  const r = typeof creditsRentIncome === 'function' ? creditsRentIncome() : 0;
+  el.style.display = r > 0 ? '' : 'none';
+  if (r > 0) el.innerHTML = `+ ${euro(r)}/mois de loyers déclarés dans <a href="#" onclick="goTo('credits');return false;">Mes Crédits</a>, déjà comptés. Ne saisissez ici que les loyers des biens sans crédit.`;
+}
+
 function refresh() {
+  refreshCreditsField();
+  refreshRentField();
   refreshBudget();
   refreshAmortStats2();
   refreshTAEG();

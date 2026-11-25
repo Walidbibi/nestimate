@@ -208,6 +208,7 @@ function confirmDeleteCreditAction() {
   _credits = _credits.filter(c => c.id !== id);
   saveCredits();
   renderCreditList();
+  if (typeof refresh === 'function') refresh();
   if (typeof refreshHome === 'function') refreshHome();
 }
 
@@ -512,6 +513,7 @@ function saveCreditForm() {
   saveCredits();
   closeCreditForm();
   renderCreditList();
+  if (typeof refresh === 'function') refresh();
   if (typeof refreshHome === 'function') refreshHome();
   if (typeof _afterSaveCreditForBien === 'function') _afterSaveCreditForBien(credit.id);
 }
@@ -843,6 +845,8 @@ function importParsedCredit() {
 function initCredits() {
   loadCredits();
   renderCreditList();
+  // main.js a déjà calculé avant le chargement des crédits → recalcul
+  if (typeof refresh === 'function') refresh();
 }
 
 initCredits();

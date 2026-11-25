@@ -25,16 +25,50 @@ function ravFloor() {
   return adults * 800 + children * 400;
 }
 
+// Loyers bruts déclarés sur les crédits locatifs de "Mes Crédits".
+// Le loyer suit le bien, pas le crédit : un crédit soldé garde son loyer.
+// Seul le bien revendu (getSoldCreditId) perd son loyer.
+function creditsRentIncome() {
+  if (typeof _credits === 'undefined' || !_credits.length) return 0;
+  const soldId = typeof getSoldCreditId === 'function' ? getSoldCreditId() : null;
+  return _credits.reduce((sum, c) => {
+    if (c.type !== 'immo' || c.subtype !== 'locatif') return sum;
+    if (soldId && c.id === soldId) return sum;
+    return sum + (parseFloat(c.loyerPercu) || 0);
+  }, 0);
+}
+
 // Revenus mensuels nets retenus
+// Méthode HCSF "classique" : loyers × rentPct ajoutés aux revenus,
+// mensualités des crédits locatifs entières dans les charges (debtCharges).
 function income() {
   const s1 = num('salary1') * num('months1') / 12;
   const s2 = hasCo ? num('salary2') * num('months2') / 12 : 0;
-  return s1 + s2 + num('rentIncome') * pct('rentPct') + num('otherIncome');
+  const rents = num('rentIncome') + creditsRentIncome();
+  return s1 + s2 + rents * pct('rentPct') + num('otherIncome');
+}
+
+// Mensualités (assurance incluse) des crédits saisis dans "Mes Crédits".
+// Exclut les crédits soldés et le crédit du bien revendu (remboursé par la vente).
+// Retourne null si aucun crédit n'est enregistré → fallback sur le champ manuel.
+function creditsMonthly() {
+  if (typeof _credits === 'undefined' || !_credits.length) return null;
+  const soldId = typeof getSoldCreditId === 'function' ? getSoldCreditId() : null;
+  return _credits.reduce((sum, c) => {
+    if (soldId && c.id === soldId) return sum;
+    const m = computeCredit(c);
+    const ended = m.simple
+      ? (m.crd <= 0 || (c.simpleEndDate && m.n <= 0))
+      : m.lm <= 0;   // plus aucune ligne active
+    return ended ? sum : sum + m.totM;
+  }, 0);
 }
 
 // Charges dans le taux d'endettement
+// Source unique : "Mes Crédits" s'il y en a, sinon le champ manuel de la page Charges.
 function debtCharges() {
-  return num('currentCredits') + num('alimonyPaid');
+  const cm = creditsMonthly();
+  return (cm !== null ? cm : num('currentCredits')) + num('alimonyPaid');
 }
 
 // Calcul du budget maximum depuis le profil
