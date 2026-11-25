@@ -780,7 +780,8 @@ function _refreshSaleData() {
   const agFees = salePrice * agRate / 100;
   const saleNet = salePrice - crd - agFees;
   const personalApport = num('apport');
-  const apportTotal = Math.max(saleNet, 0) + personalApport;
+  // Un produit net négatif (CRD + frais > prix) doit être comblé par l'apport personnel
+  const apportTotal = saleNet + personalApport;
 
   if (saleResult) saleResult.style.display = '';
   const netEl = G('saleNetDisplay');
@@ -789,7 +790,12 @@ function _refreshSaleData() {
   if (totalEl) totalEl.textContent = euro(apportTotal);
 
   const negWarn = G('saleNegativeWarning');
-  if (negWarn) negWarn.style.display = saleNet < 0 ? '' : 'none';
+  if (negWarn) {
+    negWarn.style.display = saleNet < 0 ? '' : 'none';
+    if (saleNet < 0) negWarn.textContent = apportTotal < 0
+      ? `⚠ Vente à perte : il manque ${euro(-saleNet)} pour solder le crédit, et votre apport personnel ne suffit pas (${euro(apportTotal)}). Votre budget est fortement réduit.`
+      : `⚠ Vente à perte : ${euro(-saleNet)} à combler pour solder le crédit, déduits de votre apport personnel.`;
+  }
 }
 
 // Bien sélectionné pour la revente (null si bloc fermé ou rien de sélectionné)
@@ -818,7 +824,7 @@ function getSaleApport() {
   const agRate = parseFloat((G('saleAgRate') || {}).value) || 0;
   const saleNet = salePrice - crd - salePrice * agRate / 100;
   const personalApport = num('apport');
-  return Math.max(saleNet, 0) + personalApport;
+  return saleNet + personalApport;   // peut être négatif : vente à perte non couverte
 }
 
 // ── Init ──────────────────────────────────────────────────────

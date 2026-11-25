@@ -25,7 +25,12 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 - `creditsMonthly()` (calc.js) : somme des `totM` de `_credits`, hors crédits soldés et hors crédit du bien revendu (`getSoldCreditId()`, main.js)
 - `debtCharges()` : `creditsMonthly()` si au moins un crédit existe, sinon fallback sur le champ manuel `currentCredits`
 - Page Charges : le champ manuel est masqué et remplacé par le total calculé (`refreshCreditsField()`, ui.js)
-- Limite connue : `loyerPercu` d'un crédit locatif n'est PAS ajouté aux revenus — passer par `rentIncome` (page 0)
+- `creditsRentIncome()` (calc.js) : `loyerPercu` des crédits locatifs ajoutés aux revenus × `rentPct` (méthode HCSF classique). Le loyer d'un crédit soldé reste compté, celui du bien revendu non. `rentIncome` = loyers des biens SANS crédit uniquement (hint en page 0)
+- `rentPct` par défaut : 70 (pratique bancaire courante), et non plus 90
+
+**7. ~~Revente à perte masquée~~** ✅ résolu
+- `getSaleApport()` ne clampe plus `saleNet` à 0 : un produit net négatif est déduit de l'apport personnel, l'apport total peut être négatif
+- Warning `#saleNegativeWarning` chiffré ; curseur apport (page 4) accepte un min négatif
 
 ### UX manquante
 
@@ -144,7 +149,7 @@ Analyse réalisée en simulant le parcours d'un primo-accédant (CDI, conjoint, 
 
 ### Bugs réels (priorité haute)
 
-**1. ~~`rentPct` valeur par défaut incohérente~~** ✅ résolu — `DEFAULT_VALUES.rentPct = 90`
+**1. ~~`rentPct` valeur par défaut incohérente~~** ✅ résolu — `DEFAULT_VALUES.rentPct = 70` (corrigé de 90 → 70)
 
 **2. ~~Frais de garantie calculés sur le mauvais capital~~** ✅ résolu — résolution algébrique dans `calcProject` et `calcRvb` (`guarantee = financed * gr`)
 
@@ -216,7 +221,7 @@ guaranteeRate: 1     // cautionnement type Crédit Logement
 insuranceRate: 0.36  // taux moyen marché
 quotite1: 100        // emprunteur seul = 100%
 brokerPct: 1         // si courtier activé
-rentPct: 90          // taux retenu standard banques
+rentPct: 70          // taux retenu standard banques (parfois 80)
 // RvB
 appRate: 1.5
 savRate: 3

@@ -1051,3 +1051,5 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 .credits-auto { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
 .credits-auto-value { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
 .credits-auto a, #currentCreditsHint a { color: var(--primary); }
+.credits-rent-hint { margin-top: 4px; color: var(--primary); }
+.credits-rent-hint a { color: var(--primary); font-weight: 600; }

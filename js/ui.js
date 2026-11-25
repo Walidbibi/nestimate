@@ -394,7 +394,8 @@ function initSimApport() {
   const maxVal = Math.ceil(Math.max(profileAp * 2.5, 150000) / 10000) * 10000;
   const sl = G('simApport');
   if (!sl) return;
-  sl.min = 0; sl.max = maxVal; sl.value = profileAp;
+  // Apport négatif possible (vente à perte) → le curseur doit pouvoir le représenter
+  sl.min = Math.min(0, Math.floor(profileAp / 1000) * 1000); sl.max = maxVal; sl.value = profileAp;
   G('simApportVal').textContent = euro(profileAp);
   G('simApportMax').textContent = euro(maxVal);
   G('simModBadge').style.display = 'none';
@@ -1009,8 +1010,18 @@ function refreshCreditsField() {
     + (sold ? `<br>« ${escHtml(sold.name)} » exclu : remboursé par la revente.` : '');
 }
 
+// Page Revenus : signale les loyers déjà repris depuis "Mes Crédits"
+function refreshRentField() {
+  const el = G('rentFromCredits');
+  if (!el) return;
+  const r = typeof creditsRentIncome === 'function' ? creditsRentIncome() : 0;
+  el.style.display = r > 0 ? '' : 'none';
+  if (r > 0) el.innerHTML = `+ ${euro(r)}/mois de loyers déclarés dans <a href="#" onclick="goTo('credits');return false;">Mes Crédits</a>, déjà comptés. Ne saisissez ici que les loyers des biens sans crédit.`;
+}
+
 function refresh() {
   refreshCreditsField();
+  refreshRentField();
   refreshBudget();
   refreshAmortStats2();
   refreshTAEG();
