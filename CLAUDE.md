@@ -32,6 +32,31 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 - `getSaleApport()` ne clampe plus `saleNet` à 0 : un produit net négatif est déduit de l'apport personnel, l'apport total peut être négatif
 - Warning `#saleNegativeWarning` chiffré ; curseur apport (page 4) accepte un min négatif
 
+### Points ouverts (identifiés après les fixes #4 et #7)
+
+**8. Revente à perte = dossier probablement refusé, mais pas signalé** *(à faire)*
+- Si `getSaleApport() < 0`, le budget est réduit mais le badge dossier ne bascule pas
+- Réalité bancaire : le CRD doit être soldé à la vente (mainlevée) → la banque refusera vraisemblablement le nouveau prêt
+- Piste : forcer `badge-refuse` (ou `badge-fragile` + message explicite) quand l'apport total est négatif
+
+**9. Double comptage possible des loyers (données existantes)** *(à faire)*
+- Un utilisateur qui avait recopié ses loyers dans `rentIncome` ET saisi `loyerPercu` sur ses crédits locatifs est compté deux fois
+- Aujourd'hui seul le hint `#rentFromCredits` (page 0) le prévient
+- Piste : détecter `rentIncome ≈ creditsRentIncome()` et afficher un warning — risque de faux positif
+
+**10. Crédits globaux, non rattachés au profil** *(à décider)*
+- `_credits` (clé `nestimate_credits`) est partagé par tous les profils, alors que les champs du profil sont par profil
+- OK si les profils = scénarios d'un même foyer ; faux si profils = foyers différents
+
+**11. Revente non persistée** *(à faire)*
+- `_saleOpen` / `saleBienId` ne sont pas sauvegardés : après reload, le bien revendu, son crédit et son loyer reviennent dans le calcul
+- Cohérent avec l'apport (qui revient aussi au champ manuel), mais fragile
+
+**12. Changement de comportement pour les anciennes données** *(info)*
+- Dès qu'un crédit existe dans "Mes Crédits", le champ manuel `currentCredits` est ignoré (source unique)
+- Les profils existants gardent `rentPct = 90` (seul le défaut a changé à 70)
+- Curseur apport (page 4) : pas de 1000 € → la position arrondit l'apport (préexistant, texte exact)
+
 ### UX manquante
 
 **5. ~~Métriques incohérentes en mode simplifié~~** ✅ résolu
