@@ -63,6 +63,10 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 - Les profils existants gardent `rentPct = 90` (seul le défaut a changé à 70)
 - Curseur apport (page 4) : pas de 1000 € → la position arrondit l'apport (préexistant, texte exact)
 
+**15. Carte « Mes biens » : prix d'achat au lieu de la valeur actuelle** *(à faire)*
+- `refreshHome()` (ui.js) additionne `b.price` (prix d'achat) pour le résumé de la carte
+- Pour un propriétaire, la valeur actuelle estimée (`b.currentValue`, fallback `price`) est plus parlante — même règle que le bloc revente
+
 ### UX manquante
 
 **5. ~~Métriques incohérentes en mode simplifié~~** ✅ résolu
