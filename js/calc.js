@@ -32,9 +32,27 @@ function income() {
   return s1 + s2 + num('rentIncome') * pct('rentPct') + num('otherIncome');
 }
 
+// Mensualités (assurance incluse) des crédits saisis dans "Mes Crédits".
+// Exclut les crédits soldés et le crédit du bien revendu (remboursé par la vente).
+// Retourne null si aucun crédit n'est enregistré → fallback sur le champ manuel.
+function creditsMonthly() {
+  if (typeof _credits === 'undefined' || !_credits.length) return null;
+  const soldId = typeof getSoldCreditId === 'function' ? getSoldCreditId() : null;
+  return _credits.reduce((sum, c) => {
+    if (soldId && c.id === soldId) return sum;
+    const m = computeCredit(c);
+    const ended = m.simple
+      ? (m.crd <= 0 || (c.simpleEndDate && m.n <= 0))
+      : m.lm <= 0;   // plus aucune ligne active
+    return ended ? sum : sum + m.totM;
+  }, 0);
+}
+
 // Charges dans le taux d'endettement
+// Source unique : "Mes Crédits" s'il y en a, sinon le champ manuel de la page Charges.
 function debtCharges() {
-  return num('currentCredits') + num('alimonyPaid');
+  const cm = creditsMonthly();
+  return (cm !== null ? cm : num('currentCredits')) + num('alimonyPaid');
 }
 
 // Calcul du budget maximum depuis le profil

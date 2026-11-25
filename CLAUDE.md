@@ -16,17 +16,16 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 **2. ~~Suppression crédit via `confirm()` natif~~** ✅ résolu
 - Modal `deleteCreditModal` créée, même pattern que `deleteProfileModal`
 
-**3. Format date de fin incorrect en mode simplifié** *(à faire)*
-- `c.simpleEndDate.replace('-', '/')` → `2048-11` donne `2048/11` au lieu de `11/2048`
-- Fix : `c.simpleEndDate.split('-').reverse().join('/')`
+**3. ~~Format date de fin incorrect en mode simplifié~~** ✅ résolu
+- `c.simpleEndDate.split('-').reverse().join('/')` dans `renderCreditList()`
 
 ### Problème critique d'architecture
 
-**4. Les crédits n'alimentent pas le calcul budget** *(à faire)*
-- `debtCharges()` dans `calc.js` lit `num('currentCredits')` (champ manuel page 2)
-- Les crédits saisis dans "Mes Crédits" n'affectent PAS le taux d'endettement
-- L'utilisateur doit recopier manuellement le total dans le champ Charges
-- Solution : `debtCharges()` doit lire `_credits` directement OU auto-remplir `currentCredits`
+**4. ~~Les crédits n'alimentent pas le calcul budget~~** ✅ résolu
+- `creditsMonthly()` (calc.js) : somme des `totM` de `_credits`, hors crédits soldés et hors crédit du bien revendu (`getSoldCreditId()`, main.js)
+- `debtCharges()` : `creditsMonthly()` si au moins un crédit existe, sinon fallback sur le champ manuel `currentCredits`
+- Page Charges : le champ manuel est masqué et remplacé par le total calculé (`refreshCreditsField()`, ui.js)
+- Limite connue : `loyerPercu` d'un crédit locatif n'est PAS ajouté aux revenus — passer par `rentIncome` (page 0)
 
 ### UX manquante
 

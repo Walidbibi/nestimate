@@ -988,7 +988,29 @@ function refreshComparison() {
 
 // ── Refresh principal ─────────────────────────────────────────
 
+// Page Charges : si des crédits existent dans "Mes Crédits", le champ manuel
+// est remplacé par le total calculé (source unique, pas de double saisie).
+function refreshCreditsField() {
+  const input = G('currentCredits');
+  const auto  = G('currentCreditsAuto');
+  if (!input || !auto) return;
+  const cm = typeof creditsMonthly === 'function' ? creditsMonthly() : null;
+  const isAuto = cm !== null;
+  input.style.display = isAuto ? 'none' : '';
+  G('currentCreditsHint').style.display = isAuto ? 'none' : '';
+  auto.style.display = isAuto ? '' : 'none';
+  if (!isAuto) return;
+  G('currentCreditsAutoValue').textContent = euro(cm) + '/mois';
+  const n = _credits.length;
+  const soldId = typeof getSoldCreditId === 'function' ? getSoldCreditId() : null;
+  const sold = soldId ? _credits.find(c => c.id === soldId) : null;
+  G('currentCreditsAutoHint').innerHTML =
+    `Calculé depuis <a href="#" onclick="goTo('credits');return false;">Mes Crédits</a> (${n} crédit${n > 1 ? 's' : ''}, assurance incluse, crédits soldés exclus).`
+    + (sold ? `<br>« ${escHtml(sold.name)} » exclu : remboursé par la revente.` : '');
+}
+
 function refresh() {
+  refreshCreditsField();
   refreshBudget();
   refreshAmortStats2();
   refreshTAEG();

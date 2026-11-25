@@ -466,7 +466,12 @@ function _profileSummaryHtml(data) {
   const rows = [
     data.salary1 > 0 || data.salary2 > 0 ? `<div class="pli-sum-row"><span class="pli-sum-label">Salaire(s)</span><span>${euro(parseFloat(data.salary1)||0)}${parseFloat(data.salary2)>0 ? ' + ' + euro(parseFloat(data.salary2)) : ''}/mois</span></div>` : null,
     parseFloat(data.rentIncome) > 0 ? `<div class="pli-sum-row"><span class="pli-sum-label">Revenus locatifs</span><span>${euro(parseFloat(data.rentIncome))}/mois</span></div>` : null,
-    parseFloat(data.currentCredits) > 0 ? `<div class="pli-sum-row"><span class="pli-sum-label">Crédits en cours</span><span>${euro(parseFloat(data.currentCredits))}/mois</span></div>` : null,
+    (() => {
+      // Les crédits de "Mes Crédits" priment sur le champ manuel (même règle que debtCharges)
+      const cm = typeof creditsMonthly === 'function' ? creditsMonthly() : null;
+      const v = cm !== null ? cm : parseFloat(data.currentCredits) || 0;
+      return v > 0 ? `<div class="pli-sum-row"><span class="pli-sum-label">Crédits en cours</span><span>${euro(v)}/mois</span></div>` : null;
+    })(),
     parseFloat(data.rentPaid) > 0 ? `<div class="pli-sum-row"><span class="pli-sum-label">Loyer actuel</span><span>${euro(parseFloat(data.rentPaid))}/mois</span></div>` : null,
     parseFloat(data.otherExpenses) > 0 ? `<div class="pli-sum-row"><span class="pli-sum-label">Autres charges</span><span>${euro(parseFloat(data.otherExpenses))}/mois</span></div>` : null,
     (parseFloat(data.nbAdults) > 0 || parseFloat(data.nbChildren) > 0) ? `<div class="pli-sum-row"><span class="pli-sum-label">Foyer</span><span>${data.nbAdults||1} adulte(s), ${data.nbChildren||0} enfant(s)</span></div>` : null,
@@ -787,11 +792,22 @@ function _refreshSaleData() {
   if (negWarn) negWarn.style.display = saleNet < 0 ? '' : 'none';
 }
 
-function getSaleApport() {
+// Bien sélectionné pour la revente (null si bloc fermé ou rien de sélectionné)
+function _activeSaleBien() {
   if (!_saleOpen) return null;
   const sel = G('saleBienId');
   if (!sel || !sel.value) return null;
-  const bien = (_biens || []).find(b => b.id === sel.value);
+  return (_biens || []).find(b => b.id === sel.value) || null;
+}
+
+// Crédit soldé par la revente → à exclure du taux d'endettement
+function getSoldCreditId() {
+  const bien = _activeSaleBien();
+  return bien && bien.creditId ? bien.creditId : null;
+}
+
+function getSaleApport() {
+  const bien = _activeSaleBien();
   if (!bien) return null;
   const salePrice = parseFloat(bien.currentValue) || parseFloat(bien.price) || 0;
   let crd = 0;
