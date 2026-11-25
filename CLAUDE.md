@@ -72,6 +72,21 @@ Lancer : `python3 -m http.server 3000` depuis la racine.
 
 ---
 
+## V2 — Agents projet (`.claude/agents/`)
+
+Le site actuel est un **POC**. La V2 ajoute des comptes utilisateurs et la persistance des données en base (stack à choisir).
+
+| Agent | Rôle |
+|---|---|
+| `po` | Product Owner : cadrage, user stories, priorisation, RGPD et réglementaire. Specs dans `docs/v2/` |
+| `ux-ui` | Parcours, wireframes, audit (Playwright), glossaire, accessibilité. Livrables dans `docs/v2/ux/` |
+| `persona-primo` | Primo-accédant novice, sans jargon. Seul, couple, concubins ou amis |
+| `persona-proprietaire` | Déjà propriétaire, averti. Seul, couple, famille recomposée ou SCI |
+
+Les personas sont des **simulations** : elles génèrent des hypothèses, pas une validation utilisateur.
+
+---
+
 ## Structure des fichiers
 
 | Fichier | Rôle |
