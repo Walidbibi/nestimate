@@ -86,6 +86,7 @@ En tant qu'**utilisateur qui utilise plusieurs appareils**, je veux que ma derni
 - Règle MVP : **la dernière sauvegarde gagne** (sur l'ensemble des 3 jeux de données).
 - **Given** j'ouvre l'app sur un appareil **When** elle démarre ou reprend le focus **Then** elle recharge la version du compte avant toute saisie, pour limiter les écrasements.
 - Pas d'écran de choix de version au MVP. À reconsidérer seulement si des pertes de saisie sont constatées.
+- **Garde-fou** : **Given** je suis connecté mais le premier chargement des données du compte a échoué sur cet appareil **When** je saisis **Then** rien n'est envoyé au compte tant qu'un chargement n'a pas réussi (évite qu'un appareil vide écrase le compte). Message : « ce que vous saisissez ici n'est pas envoyé » (maquette V2-06, état « Récupération impossible »). *(Décision porteur, 25/11/2026)*
 
 ### V2-08 Se déconnecter
 En tant qu'**utilisateur sur un ordinateur partagé**, je veux me déconnecter, afin que la personne suivante ne voie pas mes revenus ni mes crédits.
